@@ -29,7 +29,7 @@ def displayRandom(shape, args, models, name):
 
 
 # display one batch of reconstructed images
-def displayReconstructed(imageBatch, args, models, name, name):
+def displayReconstructed(imageBatch, args, models, name):
     recons = models.ae.predict(imageBatch, batch_size=args.batchSize)
     mergedSet = mergeSets([imageBatch, recons])
     nsqrt = int(np.ceil(np.sqrt(n)))

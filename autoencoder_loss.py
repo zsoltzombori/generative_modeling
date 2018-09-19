@@ -3,8 +3,6 @@ import keras.backend as K
 import tensorflow as tf
 import numpy as np
 
-import eigen
-
 
 # loss_features is an AttrDict with values populated in autoencoder.build_models
 def loss_factory(args, loss_features):
@@ -51,6 +49,7 @@ def loss_factory(args, loss_features):
         for i in range(len(losses)):
             loss = losses[i]
             lossName = args.losses[i]
+            print(lossName, loss)
             currentLoss = loss(x, x_decoded)
             weight = weightDict.get(lossName, 1.0)
             currentLoss *= weight

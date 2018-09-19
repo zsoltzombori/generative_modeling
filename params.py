@@ -14,6 +14,11 @@ def getArgs():
     # which model family?
     parser.add_argument('--model_type', dest="model_type", default="autoencoder", help="What kind of model are we building? See main.py for options.")
 
+    # micellaneous
+    parser.add_argument('--memory_share', dest="memory_share", type=float, default=0.45, help="fraction of memory that can be allocated to this process")
+    parser.add_argument('--frequency', dest="frequency", type=int, default=20, help="log saving frequency")
+    parser.add_argument('--verbose', dest="verbose", type=int, default=2, help="Logging verbosity: 0-silent, 1-verbose, 2-perEpoch (default)")
+
     # training
     parser.add_argument('--optimizer', dest="optimizer", default="adam", help="Optimizer, adam or rmsprop or sgd")
     parser.add_argument('--lr', dest="lr", default="0.001", type=float, help="Learning rate for the optimizer.")
@@ -30,33 +35,24 @@ def getArgs():
     parser.add_argument('--color', dest="color", default=True, help="True/False: input color")
     parser.add_argument('--shape', dest="shape", default="64,64", help="comma separated list of image shape")
 
-
+    
     # architecture
     parser.add_argument('--sampling', dest="sampling", default="False", help="True/False: use sampling")
     parser.add_argument('--activation', dest="activation", default="relu", help="activation function")
     parser.add_argument('--latent_dim', dest="latent_dim", type=int, default=3, help="Latent dimension")
 
+    # encoder
+    parser.add_argument('--encoder', dest="encoder", default="dense", help="encoder type")
+    parser.add_argument('--encoder_wd', dest="encoder_wd", type=float, default=0.0, help="Weight decay param for the encoder")
+    parser.add_argument('--encoder_use_bn', dest="encoder_use_bn", default="False", help="True/False: Use batch norm in encoder")
+    parser.add_argument('--encoder_dims', dest="encoder_dims", default="1000,1000", help="Widths of encoder layers")
 
-    # micellaneous
-    parser.add_argument('--memory_share', dest="memory_share", type=float, default=0.45, help="fraction of memory that can be allocated to this process")
-    parser.add_argument('--frequency', dest="frequency", type=int, default=20, help="log saving frequency")
-    parser.add_argument('--verbose', dest="verbose", type=int, default=2, help="Logging verbosity: 0-silent, 1-verbose, 2-perEpoch (default)")
-
-
-    # # encoder
-    # parser.add_argument('--encoder', dest="encoder", default="conv", help="encoder type (dense/conv)")
-    # parser.add_argument('--encoder_wd', dest="encoder_wd", type=float, default=0.0, help="Weight decay param for the encoder")
-    # parser.add_argument('--encoder_use_bn', dest="encoder_use_bn", type=str2bool, default=False, help="Use batch norm in encoder")
     
-    # # decoder/generator
-    # parser.add_argument('--decoder', dest="decoder", default="conv", help="decoder type (dense/conv)") #TODO
-    # parser.add_argument('--generator', dest="generator", default="dcgan", help="generator type (dense/dcgan)")
-    # parser.add_argument('--decoder_wd', dest="decoder_wd", type=float, default=0.0, help="Weight decay param for the decoder") #TODO
-    # parser.add_argument('--generator_wd', dest="generator_wd", type=float, default=0.0, help="Weight decay param for generator")
-    # parser.add_argument('--decoder_use_bn', dest="decoder_use_bn", type=str2bool, default=False, help="Use batch norm in decoder") # TODO
-    # parser.add_argument('--use_bn_gen', dest="use_bn_gen", type=str2bool, default=False, help="Use batch normalization in generator")
-    # parser.add_argument('--dcgan_size', dest="dcgan_size", default="small", help="tiny/small/large")
-    # parser.add_argument('--gen_dense_layers', dest='gen_dense_layers', default=2, help='Num of intermediate dense layers in generator') 
+    # generator
+    parser.add_argument('--generator', dest="generator", default="dense", help="generator type")
+    parser.add_argument('--generator_wd', dest="generator_wd", type=float, default=0.0, help="Weight decay param for generator")
+    parser.add_argument('--generator_use_bn', dest="generator_use_bn", default="False", help="True/False> Use batch norm in generator")
+    parser.add_argument('--generator_dims', dest='generator_dims', default="1000,1000", help='Widths of generator layers') 
 
     # # discriminator
     # parser.add_argument('--discriminator', dest="discriminator", default="dcgan", help="discriminator type (dense/dcgan)")
@@ -68,7 +64,6 @@ def getArgs():
     
     # parser.add_argument('--modelPath', dest="modelPath", default=None, help="Path to saved networks. If none, build networks from scratch.")
     
-    # parser.add_argument('--intermediate_dims', dest="intermediate_dims", default="1000,1000", help="Intermediate dimensions")
     # parser.add_argument('--depth', dest="depth", default=3, type=int, help="Depth of conv vae model")
     
     

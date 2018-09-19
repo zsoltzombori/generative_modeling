@@ -1,3 +1,4 @@
+import numpy as np
 import keras
 import tensorflow as tf
 
@@ -22,6 +23,7 @@ if keras.backend._BACKEND == "tensorflow":
 data_object = data.load(args.dataset, shape=args.shape, color=args.color)
 (x_train, x_test) = data_object.get_data(args.trainSize, args.testSize)
 args.original_shape = x_train.shape[1:]
+args.original_size = np.prod(args.original_shape)
 
 
 if args.model_type == "autoencoder":

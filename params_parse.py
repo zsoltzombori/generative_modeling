@@ -1,11 +1,6 @@
 import os
+from util import AttrDict
 
-
-# Causes memory leak below python 2.7.3
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
 
 # save params to ini_file
 def dumpParams(params, ini_file):
@@ -25,11 +20,11 @@ def heuristicCast(s):
 
     if "," in s: # apply recursively to lists separated by ","
         s_list = s.split(",")
-        return [heuristicCast(s2) for s2 in s_list]
+        return tuple([heuristicCast(s2) for s2 in s_list])
 
     if "|" in s: # apply recursively to lists separated by "|"
-        s_list = s.split(",")
-        return [heuristicCast(s2) for s2 in s_list]
+        s_list = s.split("|")
+        return tuple([heuristicCast(s2) for s2 in s_list])
     
     if s=="none":
         return None

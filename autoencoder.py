@@ -1,17 +1,25 @@
+from keras.optimizers import *
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Reshape
+
+from util import AttrDict
 import model_IO
-import loss
+import autoencoder_loss
+
+import networks.dense
+
 
 def run(args, data):
     (x_train, x_test) = data
 
     models, loss_features = build_models(args)
-    assert set(("ae", "encoder", "encoder_log_var", "generator")) < set(keys(models)),
+    assert set(("ae", "encoder", "encoder_log_var", "generator")) <= set(models.keys()), models.keys()
     
     print("Autoencoder architecture:")
     models.ae.summary()
 
     # get losses
-    loss, metrics = loss.loss_factory(loss_features, args)
+    loss, metrics = autoencoder_loss.loss_factory(args, loss_features)
 
     # get optimizer
     if args.optimizer == "rmsprop":
@@ -24,7 +32,7 @@ def run(args, data):
         assert False, "Unknown optimizer %s" % args.optimizer
 
     # compile autoencoder
-    ae.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+    models.ae.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     # TODO specify callbacks
     cbs = []
@@ -59,4 +67,39 @@ def run(args, data):
 
 
 
-def build_models(args)
+def build_models(args):
+    if args.encoder == "dense":
+        encoder_prefix = networks.dense.build_model(args.original_shape, args.encoder_dims, args.encoder_wd, args.encoder_use_bn, args.activation)
+    else:
+        assert False, "Unrecognized value for encoder: {}".format(args.encoder)
+
+    if args.generator == "dense":
+        generator_prefix = networks.dense.build_model((args.latent_dim,), args.generator_dims, args.generator_wd, args.generator_use_bn, args.activation)
+    else:
+        assert False, "Unrecognized value for generator: {}".format(args.generator)
+
+    encoder = Sequential()
+    encoder.add(encoder_prefix)
+    encoder.add(Dense(args.latent_dim))
+
+    generator = Sequential()
+    generator.add(encoder_prefix)
+    generator.add(Dense(args.original_size))
+    generator.add(Reshape(args.original_shape))
+
+    ae = Sequential([encoder, generator])
+
+    modelDict = AttrDict({})
+    modelDict.ae = ae
+    modelDict.encoder = encoder
+    modelDict.encoder_log_var = encoder # TODO
+    modelDict.generator = generator
+
+    loss_features = AttrDict({
+        # "z_sampled": z,
+        # "z_mean": z_mean,
+        # "z_log_var": z_log_var,
+        # "z_normed": z_normed,
+        # "z_projected": z_projected
+    })
+    return modelDict, loss_features
