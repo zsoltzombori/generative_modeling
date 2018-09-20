@@ -73,5 +73,18 @@ def getArgs():
 
     args_param = parser.parse_args()
     args = params_parse.mergeParamsWithInis(args_param)
+
+    # make sure the following params are tuples
+    for k in ("encoder_dims", "generator_dims", "losses", "metrics", "shape"):
+        args[k] = ensure_tuple(args[k])
+        
+    
     params_parse.dumpParams(args, args.outdir + "/all_params.ini")
     return args
+
+def ensure_tuple(v):
+    if isinstance(v, str):
+        return (v, )
+    if not isinstance(v, (tuple,)):
+        return (v, )
+    return v

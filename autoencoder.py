@@ -2,9 +2,11 @@ from keras.optimizers import *
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Reshape
 
-from util import AttrDict
+from util import AttrDict, print_model_shapes
 import model_IO
-import autoencoder_loss
+import loss
+import vis
+import samplers
 
 import networks.dense
 
@@ -15,11 +17,13 @@ def run(args, data):
     models, loss_features = build_models(args)
     assert set(("ae", "encoder", "encoder_log_var", "generator")) <= set(models.keys()), models.keys()
     
-    print("Autoencoder architecture:")
-    models.ae.summary()
+    print("Encoder architecture:")
+    print_model_shapes(models.encoder)
+    print("Generator architecture:")
+    print_model_shapes(models.generator)
 
     # get losses
-    loss, metrics = autoencoder_loss.loss_factory(args, loss_features)
+    losses, metrics = loss.loss_factory(args, loss_features)
 
     # get optimizer
     if args.optimizer == "rmsprop":
@@ -32,7 +36,7 @@ def run(args, data):
         assert False, "Unknown optimizer %s" % args.optimizer
 
     # compile autoencoder
-    models.ae.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+    models.ae.compile(optimizer=optimizer, loss=losses, metrics=metrics)
 
     # TODO specify callbacks
     cbs = []
@@ -51,7 +55,8 @@ def run(args, data):
     model_IO.save_autoencoder(models, args)
 
     # display randomly generated images
-    vis.displayRandom((10, 10), args, models, "{}/random".format(args.outdir))
+    sampler = samplers.sampler_factory(args)
+    vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
 
     # display one batch of reconstructed images
     vis.displayReconstructed(x_train[:args.batch_size], args, models, "{}/train".format(args.outdir))
@@ -83,7 +88,7 @@ def build_models(args):
     encoder.add(Dense(args.latent_dim))
 
     generator = Sequential()
-    generator.add(encoder_prefix)
+    generator.add(generator_prefix)
     generator.add(Dense(args.original_size))
     generator.add(Reshape(args.original_shape))
 

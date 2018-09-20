@@ -25,7 +25,7 @@ def load_autoencoder(args):
     modelDict = AttrDict({})
     modelDict.ae = loadModel(outdir + "/ae")
     modelDict.encoder = loadModel(outdir + "/encoder")
-    modelDict.encoder_var = loadModel(outdir + "/encoder_log_var")
+    modelDict.encoder_log_var = loadModel(outdir + "/encoder_log_var")
     modelDict.generator = loadModel(outdir + "/generator")
 
     return modelDict
@@ -34,6 +34,6 @@ def save_autoencoder(modelDict, args):
     outdir = args.outdir
     saveModel(modelDict.ae, (outdir + "/ae"))
     saveModel(modelDict.encoder, (outdir + "/encoder"))
-    saveModel(modelDict.encoder_var, (outdir + "/encoder_log_var"))
+    saveModel(modelDict.encoder_log_var, (outdir + "/encoder_log_var"))
     saveModel(modelDict.generator, (outdir + "/generator"))
 

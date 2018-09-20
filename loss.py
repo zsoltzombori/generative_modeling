@@ -4,8 +4,9 @@ import tensorflow as tf
 import numpy as np
 
 
-# loss_features is an AttrDict with values populated in autoencoder.build_models
-def loss_factory(args, loss_features):
+# loss_features is an AttrDict with all sorts of tensors that are different from the input-output
+# various models have different mechanisms for populating it
+def loss_factory(args, loss_features=None):
 
     def xent_loss(x, x_decoded):
         loss = objectives.binary_crossentropy(x, x_decoded)

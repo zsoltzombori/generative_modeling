@@ -109,7 +109,8 @@ def test_uniform(file):
 
 class Dataset(object):
     def __init__(self, name, shape, color=False, finite=False, synthetic=False):
-        assert len(shape)==2, "Expected shape of length 2"
+        print(shape)
+        assert len(shape)==2, "Expected shape of length 2, got {} instead".format(shape)
         self.name = name
         self.shape = shape
         self.color = color

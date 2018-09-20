@@ -12,6 +12,7 @@ def build_model(input_shape, dims, wd, use_bn, activation):
         outputs = Flatten()(inputs)
 
     layers = networks.net_blocks.dense_block(dims, wd, use_bn, activation)
+    print("xxx, ", len(layers))
     for l in layers:
         outputs = l(outputs)
 

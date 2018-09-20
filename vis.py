@@ -10,10 +10,10 @@ import math
 from scipy.stats import norm
 from keras.models import model_from_json
 
-def displayRandom(shape, args, models, name):
+def displayRandom(shape, args, models, sampler, name):
     height, width = shape
     cnt = height * width
-    cnt_aligned = (cnt // batch_size + 1) * args.batch_size
+    cnt_aligned = (cnt // args.batch_size + 1) * args.batch_size
     z_sample = sampler(cnt_aligned, args.latent_dim)
     x_decoded = models.generator.predict(z_sample, batch_size=args.batch_size)
     x_decoded = x_decoded[:cnt]
@@ -30,10 +30,9 @@ def displayRandom(shape, args, models, name):
 
 # display one batch of reconstructed images
 def displayReconstructed(imageBatch, args, models, name):
-    recons = models.ae.predict(imageBatch, batch_size=args.batchSize)
+    recons = models.ae.predict(imageBatch, batch_size=args.batch_size)
     mergedSet = mergeSets([imageBatch, recons])
-    nsqrt = int(np.ceil(np.sqrt(n)))
-    plotImages(mergedSet, 10, 2*args.batchSize // 10, name)
+    plotImages(mergedSet, 10, 2*args.batch_size // 10, name)
 
 
 def plotImages(data, n_x, n_y, name, text=None):

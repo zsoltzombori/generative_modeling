@@ -9,7 +9,10 @@ import autoencoder
 
 # load parameters
 args = params.getArgs()
-print(args)
+print("\n\n")
+for k in args.keys():
+    print(k, ": ", args[k])
+print("\n\n")
 
 # limit memory usage
 print("Keras version: ", keras.__version__)
