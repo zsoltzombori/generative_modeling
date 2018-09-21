@@ -9,12 +9,15 @@ import model_IO
 import loss
 import vis
 import samplers
+import callbacks
 
 import networks.dense
 
 
 def run(args, data):
     (x_train, x_test) = data
+
+    sampler = samplers.sampler_factory(args)
 
     models, loss_features = build_models(args)
     assert set(("ae", "encoder", "generator")) <= set(models.keys()), models.keys()
@@ -42,6 +45,7 @@ def run(args, data):
 
     # TODO specify callbacks
     cbs = []
+    cbs.append(callbacks.ImageDisplayCallback(x_train, x_test, args, models, sampler))
 
     # train the autoencoder
     models.ae.fit(x_train, x_train,
@@ -57,12 +61,11 @@ def run(args, data):
     model_IO.save_autoencoder(models, args)
 
     # display randomly generated images
-    sampler = samplers.sampler_factory(args)
-    vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
+    # vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
 
     # display one batch of reconstructed images
-    vis.displayReconstructed(x_train[:args.batch_size], args, models, "{}/train".format(args.outdir))
-    vis.displayReconstructed(x_test[:args.batch_size], args, models, "{}/test".format(args.outdir))
+    # vis.displayReconstructed(x_train[:args.batch_size], args, models, "{}/train".format(args.outdir))
+    # vis.displayReconstructed(x_test[:args.batch_size], args, models, "{}/test".format(args.outdir))
 
 
     # # display image interpolation
