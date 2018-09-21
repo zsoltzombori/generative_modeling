@@ -1,0 +1,8 @@
+not implemented yet:
+
+verbose model summary
+callbacks, most notably visualization callbacks
+convolutional encoder/decoder
+less sucky, more standardized data feeds
+some basic GAN
+some advanced VAE-GAN hybrid like introVAE
