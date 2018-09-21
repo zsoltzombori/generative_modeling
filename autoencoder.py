@@ -1,6 +1,8 @@
 from keras.optimizers import *
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Reshape
+from keras.layers import Dense, Activation, Reshape, Input, Lambda
+from keras import backend as K
+from keras.models import Model
 
 from util import AttrDict, print_model_shapes
 import model_IO
@@ -15,7 +17,7 @@ def run(args, data):
     (x_train, x_test) = data
 
     models, loss_features = build_models(args)
-    assert set(("ae", "encoder", "encoder_log_var", "generator")) <= set(models.keys()), models.keys()
+    assert set(("ae", "encoder", "generator")) <= set(models.keys()), models.keys()
     
     print("Encoder architecture:")
     print_model_shapes(models.encoder)
@@ -73,38 +75,73 @@ def run(args, data):
 
 
 def build_models(args):
+    loss_features = AttrDict({})
+    
+    if args.sampling:
+        encoder_output_shape = (args.latent_dim, 2)
+    else:
+        encoder_output_shape = (args.latent_dim, )
+        
     if args.encoder == "dense":
-        encoder_prefix = networks.dense.build_model(args.original_shape, args.encoder_dims, args.encoder_wd, args.encoder_use_bn, args.activation)
+        encoder = networks.dense.build_model(args.original_shape,
+                                             encoder_output_shape,
+                                             args.encoder_dims,
+                                             args.encoder_wd,
+                                             args.encoder_use_bn,
+                                             args.activation,
+                                             "linear")
     else:
         assert False, "Unrecognized value for encoder: {}".format(args.encoder)
 
+    generator_input_shape = (args.latent_dim, )
     if args.generator == "dense":
-        generator_prefix = networks.dense.build_model((args.latent_dim,), args.generator_dims, args.generator_wd, args.generator_use_bn, args.activation)
+        generator = networks.dense.build_model(generator_input_shape,
+                                               args.original_shape,
+                                               args.generator_dims,
+                                               args.generator_wd,
+                                               args.generator_use_bn,
+                                               args.activation,
+                                               "linear")
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
-    encoder = Sequential()
-    encoder.add(encoder_prefix)
-    encoder.add(Dense(args.latent_dim))
+    if args.sampling:
+        sampler_model = add_gaussian_sampling(encoder_output_shape, args)
 
-    generator = Sequential()
-    generator.add(generator_prefix)
-    generator.add(Dense(args.original_size))
-    generator.add(Reshape(args.original_shape))
-
-    ae = Sequential([encoder, generator])
+        inputs = Input(shape=args.original_shape)
+        hidden = encoder(inputs)
+        (z, z_mean, z_log_var) = sampler_model(hidden)
+        encoder = Model(inputs, [z, z_mean, z_log_var])
+        
+        loss_features["z_mean"] = z_mean
+        loss_features["z_log_var"] = z_log_var
+        output = generator(z)
+        ae = Model(inputs, output)
+    else:
+        ae = Sequential([encoder, generator])
 
     modelDict = AttrDict({})
     modelDict.ae = ae
     modelDict.encoder = encoder
-    modelDict.encoder_log_var = encoder # TODO
     modelDict.generator = generator
 
-    loss_features = AttrDict({
-        # "z_sampled": z,
-        # "z_mean": z_mean,
-        # "z_log_var": z_log_var,
-        # "z_normed": z_normed,
-        # "z_projected": z_projected
-    })
     return modelDict, loss_features
+
+
+def add_gaussian_sampling(input_shape, args):
+    assert input_shape[-1] == 2
+    inputs = Input(shape=input_shape)
+
+    z_mean = Lambda(lambda x: x[...,0], output_shape=input_shape[:-1])(inputs)
+    z_log_var = Lambda(lambda x: x[...,1], output_shape=input_shape[:-1])(inputs)
+    
+    output_shape = list(K.int_shape(z_mean))
+    output_shape[0] = args.batch_size
+    
+    def sampling(inputs):
+        z_mean, z_log_var = inputs
+        epsilon = K.random_normal(shape=output_shape, mean=0.)
+        return z_mean + K.exp(z_log_var / 2) * epsilon
+    z = Lambda(sampling)([z_mean, z_log_var])
+    sampler_model = Model(inputs, [z, z_mean, z_log_var])
+    return sampler_model
