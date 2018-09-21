@@ -173,7 +173,7 @@ class Dataset_mnist(Dataset_real):
         super(Dataset_mnist, self).__init__("mnist", shape, color=False)
         self.anchor_indices = [12, 9, 50]
 
-        cacheFile_64_64 = "/home/zombori/datasets/mnist_64_64.npz"
+        cacheFile_64_64 = "datasets/mnist_64_64.npz"
         if shape == (64, 64) and os.path.isfile(cacheFile_64_64):
             assert digit==None, "no digit filtering on cached data, sorry."
             cache = np.load(cacheFile_64_64)
@@ -212,17 +212,17 @@ class Dataset_celeba(Dataset_real):
 
         # determine cache file
         if shape==(72, 60):
-            directory = "/home/daniel/autoencoding_beyond_pixels/datasets/celeba/img_align_celeba-60x72"
+            directory = "datasets/celeba/img_align_celeba-60x72"
             if color:
-                cacheFile = "/home/zombori/datasets/celeba_72_60_color.npy"
+                cacheFile = "datasets/celeba_72_60_color.npy"
             else:
-                cacheFile = "/home/zombori/datasets/celeba_72_60.npy"
+                cacheFile = "datasets/celeba_72_60.npy"
         elif shape==(72, 64) or shape==(64,64):
-            directory = "/home/daniel/autoencoding_beyond_pixels/datasets/celeba/img_align_celeba-64x72"
+            directory = "datasets/celeba/img_align_celeba-64x72"
             if color:
-                cacheFile = "/home/zombori/datasets/celeba_72_64_color.npy"
+                cacheFile = "datasets/celeba_72_64_color.npy"
             else:
-                cacheFile = "/home/zombori/datasets/celeba_72_64.npy"
+                cacheFile = "datasets/celeba_72_64.npy"
         else:
             assert False, "We don't have a celeba dataset with this size. Maybe you forgot about height x width order?"
 
@@ -258,8 +258,8 @@ class Dataset_celeba(Dataset_real):
         return (self.x_train, self.x_test)
 
     def get_labels(self):
-        labelCache = "/home/zombori/datasets/celeba_labels.npy"
-        labelNamesCache = "/home/zombori/datasets/celeba_labels.txt"
+        labelCache = "datasets/celeba_labels.npy"
+        labelNamesCache = "datasets/celeba_labels.txt"
         if os.path.isfile(labelCache) and os.path.isfile(labelNamesCache):
             self.labels = np.load(labelCache)
             labelNamesHandle = open(labelNamesCache, 'rb')
@@ -280,7 +280,7 @@ class Dataset_bedroom(Dataset_real):
         super(Dataset_bedroom, self).__init__("bedroom", shape, color=True)
 
         if shape==(64, 64):
-            cacheFile = "/home/zombori/datasets/bedroom/bedroom_64_64.npy"
+            cacheFile = "datasets/bedroom/bedroom_64_64.npy"
         else:
             assert False, "We don't have a bedroom dataset with size {}".format(shape)
         if os.path.isfile(cacheFile):
@@ -546,7 +546,7 @@ class Dataset_syn_constant_normal(Dataset_syn_infinite):
 
 
 def resize_bedroom(sizeX, sizeY, count, outputFile):
-    directory = "/home/zombori/datasets/bedroom/data"
+    directory = "datasets/bedroom/data"
     def auxFun(path, count):
         if count <= 0: return (0, [])
         if path.endswith('.webp'):
@@ -569,6 +569,7 @@ def resize_bedroom(sizeX, sizeY, count, outputFile):
 
 
 def resize_images(dataset, sizeX, sizeY, sizeZ, outputFile=None):
+    print("resizing images, this will take a while...")
     result = []
     for i in range(dataset.shape[0]):
         image = dataset[i]
@@ -577,11 +578,12 @@ def resize_images(dataset, sizeX, sizeY, sizeZ, outputFile=None):
     result = np.array(result)
     if outputFile is not None: 
         np.save(outputFile, result)
+    print("done resizing images.")
     return result
 
 
 def load_celeba_labels():
-    labelFile = "/home/daniel/autoencoding_beyond_pixels/datasets/celeba/list_attr_celeba.txt"
+    labelFile = "datasets/celeba/list_attr_celeba.txt"
     fileHandle = open(labelFile, 'rb')
     lines = fileHandle.readlines()
     lines = [x.strip() for x in lines]
