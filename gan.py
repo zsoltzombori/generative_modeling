@@ -45,16 +45,18 @@ def run(args, data):
     # compile models
     print(metrics)
     print(metric_names)
+
     models.discriminator.compile(optimizer=optimizer, loss=loss_discriminator, metrics=metrics)
     models.discriminator.trainable = False # For the combined model we will only train the generator
     models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
+
 
     disc_losses = []
     gen_losses = []
 
     # Adversarial ground truths
-    valid = np.ones((args.batch_size, 1))
-    fake = np.zeros((args.batch_size, 1))
+    valid_labels = np.ones((args.batch_size, 1))
+    fake_labels = np.zeros((args.batch_size, 1))
 
     for step in range(args.training_steps):
         # ---------------------
@@ -68,19 +70,21 @@ def run(args, data):
         noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
         # Generate a batch of new images
         gen_imgs = models.generator.predict(noise)
+        if step % 100 == 0:
+            vis.plotImages(gen_imgs, 2*10, args.batch_size // 10, "{}-gen-{}".format("gan", step))
 
         # Train the discriminator
-        d_loss_real = models.discriminator.train_on_batch(imgs, valid)
-        d_loss_fake = models.discriminator.train_on_batch(gen_imgs, fake)
+        d_loss_real = models.discriminator.train_on_batch(imgs, valid_labels)
+        d_loss_fake = models.discriminator.train_on_batch(gen_imgs, fake_labels)
         d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
         
         # ---------------------
         #  Train Generator
         # ---------------------
-        
-        noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
-        # Train the generator (to have the discriminator label samples as valid)
-        g_loss = models.gen_disc.train_on_batch(noise, valid)
+        for i in range(4):
+            noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
+            # Train the generator (to have the discriminator label samples as valid)
+            g_loss = models.gen_disc.train_on_batch(noise, valid_labels)
 
         # Plot the progress
         print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (step, d_loss[0], 100*d_loss[1], g_loss))

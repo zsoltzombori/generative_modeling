@@ -8,6 +8,7 @@ class AttrDict(dict):
 
 def print_model(model_or_layer):
     if type(model_or_layer) == Model:
+        model_or_layer.summary()
         for layer in model_or_layer.layers:
             print_model(layer)
     else:
