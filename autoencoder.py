@@ -1,6 +1,7 @@
+import numpy as np
 from keras.optimizers import *
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Reshape, Input, Lambda
+from keras.layers import Dense, Activation, Reshape, Input, Lambda, Concatenate, Flatten
 from keras import backend as K
 from keras.models import Model
 
@@ -14,7 +15,7 @@ import networks.dense
 
 
 def run(args, data):
-    (x_train, x_test) = data
+    ((x_train, y_train), (x_test, y_test)) = data
 
     models, loss_features = build_models(args)
     assert set(("ae", "encoder", "generator")) <= set(models.keys()), models.keys()
@@ -44,15 +45,15 @@ def run(args, data):
     cbs = []
 
     # train the autoencoder
-    models.ae.fit(x_train, x_train,
+    models.ae.fit((x_train, y_train), x_train,
                   verbose=args.verbose,
                   shuffle=True,
                   epochs=args.nb_epoch,
                   batch_size=args.batch_size,
-                  callbacks = cbs,
-                  validation_data=(x_test, x_test)
-    )
-    
+                  callbacks = cbs)
+                  # validation_data=((x_test, y_test), x_test)
+    # )
+
     # save models
     model_IO.save_autoencoder(models, args)
 
@@ -76,7 +77,20 @@ def run(args, data):
 
 def build_models(args):
     loss_features = AttrDict({})
-    
+
+    input_x = Input(shape=args.original_shape)
+    input_y = Input(shape=(args.y_label_count,))
+    concat_layer = Concatenate()
+    merged = concat_layer((Flatten()(input_x), input_y))
+    merge_model = Model(inputs=[input_x, input_y], output = merge)
+    concatenated_input_size = np.prod(args.original_shape) + args.y_label_count
+
+    input_y2 = Input(shape=args.y_label_count)
+    input_latent = Input(shape=args.latent_dim)
+    concat_layer2 = Concatenate()
+    merged_latent = concat_layer((input_latent, input_y2))
+    merge_latent_model = Model(inputs=[input_latent, input_y2], output = merged_latent)
+
     if args.sampling:
         encoder_output_shape = (args.latent_dim, 2)
     else:
@@ -90,10 +104,11 @@ def build_models(args):
                                              args.encoder_use_bn,
                                              args.activation,
                                              "linear")
+        encoder = Sequential([merge_model, encoder])
     else:
         assert False, "Unrecognized value for encoder: {}".format(args.encoder)
 
-    generator_input_shape = (args.latent_dim, )
+    generator_input_shape = (args.latent_dim + args.y_label_count, )
     if args.generator == "dense":
         generator = networks.dense.build_model(generator_input_shape,
                                                args.original_shape,
@@ -102,6 +117,7 @@ def build_models(args):
                                                args.generator_use_bn,
                                                args.activation,
                                                "linear")
+        generator = Sequential([merge_latent_model, generator])
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
@@ -115,8 +131,8 @@ def build_models(args):
         
         loss_features["z_mean"] = z_mean
         loss_features["z_log_var"] = z_log_var
-        output = generator(z)
-        ae = Model(inputs, output)
+        output = generator(z, input_y)
+        ae = Model(inputs=[input_x, input_y], outputs=output)
     else:
         ae = Sequential([encoder, generator])
 

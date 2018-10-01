@@ -173,14 +173,6 @@ class Dataset_mnist(Dataset_real):
         super(Dataset_mnist, self).__init__("mnist", shape, color=False)
         self.anchor_indices = [12, 9, 50]
 
-        cacheFile_64_64 = "datasets/mnist_64_64.npz"
-        if shape == (64, 64) and os.path.isfile(cacheFile_64_64):
-            assert digit==None, "no digit filtering on cached data, sorry."
-            cache = np.load(cacheFile_64_64)
-            self.x_train_orig = cache["x_train"]
-            self.x_test_orig = cache["x_test"]
-            return
-
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train = x_train.astype('float32') / 255.
         x_test = x_test.astype('float32') / 255.
@@ -198,13 +190,17 @@ class Dataset_mnist(Dataset_real):
         if shape == (64, 64):
             x_train = resize_images(x_train, 64, 64, 1)
             x_test = resize_images(x_test, 64, 64, 1)
-            np.savez(cacheFile_64_64, x_train=x_train, x_test=x_test)        
+            np.savez(cacheFile_64_64, x_train=x_train, x_test=x_test)
         self.x_train_orig = x_train
         self.x_test_orig = x_test
+        self.y_train_orig = y_train
+        self.y_test_orig = y_test
     def get_data(self, trainSize, testSize):
         self.x_train = self.limit_data(self.x_train_orig, trainSize)
         self.x_test = self.limit_data(self.x_test_orig, testSize)
-        return (self.x_train, self.x_test)
+        self.y_train = self.limit_data(self.y_train_orig, trainSize)
+        self.y_test = self.limit_data(self.y_test_orig, testSize)
+        return ((self.x_train, self.y_train), (self.x_test, self.y_test))
 
 class Dataset_celeba(Dataset_real):
     def __init__(self, shape=(64,64), color=True):
