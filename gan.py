@@ -17,7 +17,7 @@ def run(args, data):
     (x_train, x_test) = data
 
     models, loss_features = build_models(args)
-    assert set(("generator", "discriminator")) <= set(models.keys()), models.keys()
+    assert set(("generator", "discriminator", "gen_disc")) <= set(models.keys()), models.keys()
 
     print("Discriminator architecture:")
     print_model_shapes(models.discriminator)
@@ -25,7 +25,11 @@ def run(args, data):
     print_model_shapes(models.generator)
 
     # get losses
-    losses, metrics = loss.loss_factory(args, loss_features)
+    loss_discriminator = loss.loss_factory(args.loss_discriminator, args, loss_features, combine_with_weights=True)
+    loss_generator = loss.loss_factory(args.loss_generator, args, loss_features, combine_with_weights=True)
+    metric_names = sorted(set(args.metrics + args.loss_discriminator + args.loss_generator))
+    metrics = loss.loss_factory(metric_names, args, loss_features, combine_with_weights=False)
+    
 
     # get optimizer
     if args.optimizer == "rmsprop":
@@ -37,8 +41,8 @@ def run(args, data):
     else:
         assert False, "Unknown optimizer %s" % args.optimizer
 
-    # compile autoencoder
-    models.generator.compile(optimizer=optimizer, loss=losses, metrics=metrics)
+    # compile generator
+    models.generator.compile(optimizer=optimizer, loss=loss, metrics=metrics)
     models.gen_disc.compile(optimizer=optimizer, loss=losses, metrics=metrics)
 
     # TODO specify callbacks
@@ -52,8 +56,8 @@ def run(args, data):
       sess.run(generator_update_op)
 
       if i % 100 == 0: 
-        disc_loss = sess.run(discriminator_loss)
-        gen_loss = sess.run(generator_loss)
+        disc_loss = sess.run(loss_discriminator)
+        gen_loss = sess.run(loss_generator)
 
         disc_losses.append(disc_loss)
         gen_losses.append(gen_loss)
@@ -95,22 +99,17 @@ def run(args, data):
 
 def build_models(args):
     loss_features = AttrDict({})
-    
-    if args.sampling:
-        encoder_output_shape = (args.latent_dim, 2)
-    else:
-        encoder_output_shape = (args.latent_dim, )
-        
+            
     if args.discriminator == "dense":
         discriminator = networks.dense.build_model(args.original_shape,
-                                             encoder_output_shape,
-                                             args.encoder_dims,
-                                             args.encoder_wd,
-                                             args.encoder_use_bn,
-                                             args.activation,
-                                             "linear")
+                                                   1,
+                                                   args.discriminator_dims,
+                                                   args.discriminator_wd,
+                                                   args.discriminator_use_bn,
+                                                   args.activation,
+                                                   "linear")
     else:
-        assert False, "Unrecognized value for discriminator: {}".format(args.encoder)
+        assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
 
     generator_input_shape = (args.latent_dim, )
     if args.generator == "dense":
@@ -124,20 +123,7 @@ def build_models(args):
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
-    if args.sampling:
-        sampler_model = add_gaussian_sampling(encoder_output_shape, args)
-
-        inputs = Input(shape=args.original_shape)
-        hidden = encoder(inputs)
-        (z, z_mean, z_log_var) = sampler_model(hidden)
-        encoder = Model(inputs, [z, z_mean, z_log_var])
-
-        loss_features["z_mean"] = z_mean
-        loss_features["z_log_var"] = z_log_var
-        output = generator(z)
-        ae = Model(inputs, output)
-    else:
-        gen_disc = Sequential([generator, discriminator])
+    gen_disc = Sequential([generator, discriminator])
 
     modelDict = AttrDict({})
     modelDict.gen_disc = gen_disc
@@ -145,22 +131,3 @@ def build_models(args):
     modelDict.generator = generator
 
     return modelDict, loss_features
-
-
-def add_gaussian_sampling(input_shape, args):
-    assert input_shape[-1] == 2
-    inputs = Input(shape=input_shape)
-
-    z_mean = Lambda(lambda x: x[...,0], output_shape=input_shape[:-1])(inputs)
-    z_log_var = Lambda(lambda x: x[...,1], output_shape=input_shape[:-1])(inputs)
-
-    output_shape = list(K.int_shape(z_mean))
-    output_shape[0] = args.batch_size
-
-    def sampling(inputs):
-        z_mean, z_log_var = inputs
-        epsilon = K.random_normal(shape=output_shape, mean=0.)
-        return z_mean + K.exp(z_log_var / 2) * epsilon
-    z = Lambda(sampling)([z_mean, z_log_var])
-    sampler_model = Model(inputs, [z, z_mean, z_log_var])
-    return sampler_model

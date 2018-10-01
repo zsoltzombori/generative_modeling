@@ -25,7 +25,10 @@ def run(args, data):
     print_model_shapes(models.generator)
 
     # get losses
-    losses, metrics = loss.loss_factory(args, loss_features)
+    loss_names = sorted(set(args.loss_encoder + args.loss_generator))
+    losses = loss.loss_factory(loss_names, args, loss_features, combine_with_weights=True)
+    metric_names = sorted(set(args.metrics + tuple(loss_names)))
+    metrics = loss.loss_factory(metric_names, args, loss_features, combine_with_weights=False)
 
     # get optimizer
     if args.optimizer == "rmsprop":
