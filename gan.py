@@ -5,7 +5,7 @@ from keras.layers import Dense, Activation, Reshape, Input, Lambda, GaussianNois
 from keras import backend as K
 from keras.models import Model
 
-from util import AttrDict, print_model_shapes
+from util import *
 import model_IO
 import loss
 import vis
@@ -21,9 +21,9 @@ def run(args, data):
     assert set(("generator", "discriminator", "gen_disc")) <= set(models.keys()), models.keys()
 
     print("Discriminator architecture:")
-    print_model_shapes(models.discriminator)
+    print_model(models.discriminator)
     print("Generator architecture:")
-    print_model_shapes(models.generator)
+    print_model(models.generator)
 
     # get losses
     loss_discriminator = loss.loss_factory(args.loss_discriminator, args, loss_features, combine_with_weights=True)

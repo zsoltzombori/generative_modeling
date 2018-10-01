@@ -4,7 +4,7 @@ from keras.layers import Dense, Activation, Reshape, Input, Lambda
 from keras import backend as K
 from keras.models import Model
 
-from util import AttrDict, print_model_shapes
+from util import *
 import model_IO
 import loss
 import vis
@@ -20,9 +20,9 @@ def run(args, data):
     assert set(("ae", "encoder", "generator")) <= set(models.keys()), models.keys()
     
     print("Encoder architecture:")
-    print_model_shapes(models.encoder)
+    print_model(models.encoder)
     print("Generator architecture:")
-    print_model_shapes(models.generator)
+    print_model(models.generator)
 
     # get losses
     loss_names = sorted(set(args.loss_encoder + args.loss_generator))
