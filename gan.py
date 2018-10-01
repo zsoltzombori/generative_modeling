@@ -43,8 +43,6 @@ def run(args, data):
         assert False, "Unknown optimizer %s" % args.optimizer
 
     # compile models
-    print(metrics)
-    print(metric_names)
     models.discriminator.compile(optimizer=optimizer, loss=loss_discriminator, metrics=metrics)
     models.discriminator.trainable = False # For the combined model we will only train the generator
     models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
@@ -81,6 +79,7 @@ def run(args, data):
         noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
         # Train the generator (to have the discriminator label samples as valid)
         g_loss = models.gen_disc.train_on_batch(noise, valid)
+
 
         # Plot the progress
         print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (step, d_loss[0], 100*d_loss[1], g_loss))
@@ -132,7 +131,7 @@ def build_models(args):
                                                args.generator_wd,
                                                args.generator_use_bn,
                                                args.activation,
-                                               "linear")
+                                               "sigmoid")
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 

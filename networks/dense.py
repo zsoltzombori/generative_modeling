@@ -16,7 +16,7 @@ def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_ac
     for l in layers:
         outputs = l(outputs)
 
-    outputs = Dense(np.prod(output_shape))(outputs)
+    outputs = Dense(np.prod(output_shape), activation=last_activation)(outputs)
     outputs = Reshape(output_shape)(outputs)
 
     model = Model(inputs=inputs, outputs=outputs)
