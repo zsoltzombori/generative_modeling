@@ -36,27 +36,28 @@ def run(args, data):
     if args.optimizer == "rmsprop":
         optimizer = RMSprop(lr=args.lr, clipvalue=1.0)
     elif args.optimizer == "adam":
-        optimizer = Adam(lr=args.lr, clipvalue=1.0)
+        optimizer = Adam(lr=args.lr, epsilon=0.5)
     elif args.optimizer == "sgd":
         optimizer = SGD(lr = args.lr, clipvalue=1.0)
     else:
         assert False, "Unknown optimizer %s" % args.optimizer
 
     # compile models
-    print(metrics)
-    print(metric_names)
-
     models.discriminator.compile(optimizer=optimizer, loss=loss_discriminator, metrics=metrics)
     models.discriminator.trainable = False # For the combined model we will only train the generator
     models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
 
 
-    disc_losses = []
-    gen_losses = []
-
     # Adversarial ground truths
     valid_labels = np.ones((args.batch_size, 1))
     fake_labels = np.zeros((args.batch_size, 1))
+
+    assert args.batch_size % 2 == 0
+    half = args.batch_size // 2
+    out_batch1 = np.concatenate([valid_labels[:half], fake_labels[:half]])
+    out_batch2 = np.concatenate([valid_labels[half:], fake_labels[half:]])
+
+    sampler = samplers.sampler_factory(args)
 
     for step in range(args.training_steps):
         # ---------------------
@@ -70,13 +71,18 @@ def run(args, data):
         noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
         # Generate a batch of new images
         gen_imgs = models.generator.predict(noise)
-        if step % 100 == 0:
-            vis.plotImages(gen_imgs, 2*10, args.batch_size // 10, "{}-gen-{}".format("gan", step))
 
+        # mix the two batches
+        in_batch1 = np.concatenate([imgs[:half], gen_imgs[:half]])
+        in_batch2 = np.concatenate([imgs[half:], gen_imgs[half:]])
+        
         # Train the discriminator
-        d_loss_real = models.discriminator.train_on_batch(imgs, valid_labels)
-        d_loss_fake = models.discriminator.train_on_batch(gen_imgs, fake_labels)
-        d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
+        # d_loss_real = models.discriminator.train_on_batch(imgs, valid_labels)
+        # d_loss_fake = models.discriminator.train_on_batch(gen_imgs, fake_labels)
+        # d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
+        d_loss1 = models.discriminator.train_on_batch(in_batch1, out_batch1)
+        d_loss2 = models.discriminator.train_on_batch(in_batch2, out_batch2)
+        d_loss = 0.5 * (np.add(d_loss1, d_loss2))
         
         # ---------------------
         #  Train Generator
@@ -88,31 +94,16 @@ def run(args, data):
 
 
         # Plot the progress
-        print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (step, d_loss[0], 100*d_loss[1], g_loss))
-
-        disc_losses.append(d_loss[0])
-        gen_losses.append(g_loss)
-
-
-    # # save models
-    # model_IO.save_autoencoder(models, args)
-
-    # # display randomly generated images
-    # sampler = samplers.sampler_factory(args)
-    # vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
-
-    # # display one batch of reconstructed images
-    # vis.displayReconstructed(x_train[:args.batch_size], args, models, "{}/train".format(args.outdir))
-    # vis.displayReconstructed(x_test[:args.batch_size], args, models, "{}/test".format(args.outdir))
+        if (step+1) % args.frequency == 0:
+            print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (step+1, d_loss[0], 100*d_loss[1], g_loss))
+            vis.displayRandom((10, 10), args, models, sampler, "{}/random-{}".format(args.outdir, step+1))
 
 
-    # # display image interpolation
-    # vis.displayInterp(x_train, x_test, args.batch_size, args.latent_dim, encoder, encoder_var, args.sampling, generator, 10, "%s-interp" % args.prefix,
-    #                   anchor_indices = data_object.anchor_indices, toroidal=args.toroidal)
+    # save models
+    model_IO.save_gan(models, args)
 
-    # vis.plotMVhist(x_train, encoder, args.batch_size, "{}-mvhist.png".format(args.prefix))
-    # vis.plotMVVM(x_train, encoder, encoder_var, args.batch_size, "{}-mvvm.png".format(args.prefix))
-
+    # display randomly generated images
+    vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
 
 
 def build_models(args):

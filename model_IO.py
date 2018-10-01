@@ -26,12 +26,24 @@ def load_autoencoder(args):
     modelDict.ae = loadModel(outdir + "/ae")
     modelDict.encoder = loadModel(outdir + "/encoder")
     modelDict.generator = loadModel(outdir + "/generator")
-
     return modelDict
+def load_gan(args):
+    outdir = args.outdir
+    modelDict = AttrDict({})
+    modelDict.discriminator = loadModel(outdir + "/discriminator")
+    modelDict.gen_disc = loadModel(outdir + "/gen_disc")
+    modelDict.generator = loadModel(outdir + "/generator")
+    return modelDict
+
 
 def save_autoencoder(modelDict, args):
     outdir = args.outdir
     saveModel(modelDict.ae, (outdir + "/ae"))
     saveModel(modelDict.encoder, (outdir + "/encoder"))
     saveModel(modelDict.generator, (outdir + "/generator"))
+def save_gan(modelDict, args):
+    outdir = args.outdir
+    saveModel(modelDict.discriminator, (outdir + "/discriminator"))
+    saveModel(modelDict.generator, (outdir + "/generator"))
+    saveModel(modelDict.gen_disc, (outdir + "/gen_disc"))
 
