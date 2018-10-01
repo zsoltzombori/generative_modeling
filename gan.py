@@ -1,6 +1,7 @@
+import numpy as np
 from keras.optimizers import *
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Reshape, Input, Lambda
+from keras.layers import Dense, Activation, Reshape, Input, Lambda, GaussianNoise
 from keras import backend as K
 from keras.models import Model
 
@@ -41,51 +42,63 @@ def run(args, data):
     else:
         assert False, "Unknown optimizer %s" % args.optimizer
 
-    # compile generator
-    models.generator.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-    models.gen_disc.compile(optimizer=optimizer, loss=losses, metrics=metrics)
-
-    # TODO specify callbacks
-    cbs = []
+    # compile models
+    print(metrics)
+    print(metric_names)
+    models.discriminator.compile(optimizer=optimizer, loss=loss_discriminator, metrics=metrics)
+    models.discriminator.trainable = False # For the combined model we will only train the generator
+    models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
 
     disc_losses = []
     gen_losses = []
 
-    for i in xrange(TRAINING_STEPS):
-      sess.run(discriminator_update_op)
-      sess.run(generator_update_op)
+    # Adversarial ground truths
+    valid = np.ones((args.batch_size, 1))
+    fake = np.zeros((args.batch_size, 1))
 
-      if i % 100 == 0: 
-        disc_loss = sess.run(loss_discriminator)
-        gen_loss = sess.run(loss_generator)
+    for step in range(args.training_steps):
+        # ---------------------
+        #  Train Discriminator
+        # ---------------------
+        
+        # Select a random batch of images
+        idx = np.random.randint(0, x_train.shape[0], args.batch_size)
+        imgs = x_train[idx]
 
-        disc_losses.append(disc_loss)
-        gen_losses.append(gen_loss)
+        noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
+        # Generate a batch of new images
+        gen_imgs = models.generator.predict(noise)
 
-        print('At iteration {} out of {}'.format(i, TRAINING_STEPS))
+        # Train the discriminator
+        d_loss_real = models.discriminator.train_on_batch(imgs, valid)
+        d_loss_fake = models.discriminator.train_on_batch(gen_imgs, fake)
+        d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
+        
+        # ---------------------
+        #  Train Generator
+        # ---------------------
+        
+        noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
+        # Train the generator (to have the discriminator label samples as valid)
+        g_loss = models.gen_disc.train_on_batch(noise, valid)
 
-    # train the autoencoder
-    """
-    models.ae.fit(x_train, x_train,
-                  verbose=args.verbose,
-                  shuffle=True,
-                  epochs=args.nb_epoch,
-                  batch_size=args.batch_size,
-                  callbacks = cbs,
-                  validation_data=(x_test, x_test)
-    )
-    """
+        # Plot the progress
+        print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (step, d_loss[0], 100*d_loss[1], g_loss))
 
-    # save models
-    model_IO.save_autoencoder(models, args)
+        disc_losses.append(d_loss[0])
+        gen_losses.append(g_loss)
 
-    # display randomly generated images
-    sampler = samplers.sampler_factory(args)
-    vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
 
-    # display one batch of reconstructed images
-    vis.displayReconstructed(x_train[:args.batch_size], args, models, "{}/train".format(args.outdir))
-    vis.displayReconstructed(x_test[:args.batch_size], args, models, "{}/test".format(args.outdir))
+    # # save models
+    # model_IO.save_autoencoder(models, args)
+
+    # # display randomly generated images
+    # sampler = samplers.sampler_factory(args)
+    # vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
+
+    # # display one batch of reconstructed images
+    # vis.displayReconstructed(x_train[:args.batch_size], args, models, "{}/train".format(args.outdir))
+    # vis.displayReconstructed(x_test[:args.batch_size], args, models, "{}/test".format(args.outdir))
 
 
     # # display image interpolation
@@ -102,12 +115,12 @@ def build_models(args):
             
     if args.discriminator == "dense":
         discriminator = networks.dense.build_model(args.original_shape,
-                                                   1,
+                                                   [1],
                                                    args.discriminator_dims,
                                                    args.discriminator_wd,
                                                    args.discriminator_use_bn,
                                                    args.activation,
-                                                   "linear")
+                                                   "sigmoid")
     else:
         assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
 

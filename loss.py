@@ -1,4 +1,5 @@
 from keras import objectives
+from keras import metrics
 import keras.backend as K
 import tensorflow as tf
 import numpy as np
@@ -27,6 +28,13 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
     def variance_loss(x, x_decoded): # pushing the variance towards 1
         loss = 0.5 * K.sum(-1 - loss_features.z_log_var + K.exp(loss_features.z_log_var), axis=-1)
         return K.mean(loss)
+
+    def binary_crossentropy_loss(x, x_decoded):
+        loss = objectives.binary_crossentropy(x, x_decoded)
+        return K.mean(loss)
+    def accuracy(x, x_decoded):
+        acc = metrics.binary_accuracy(x, x_decoded)
+        return K.mean(acc)
 
     losses = []
     for loss in loss_names:
