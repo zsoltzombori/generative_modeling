@@ -86,6 +86,7 @@ def run(args, data):
             # Train the generator (to have the discriminator label samples as valid)
             g_loss = models.gen_disc.train_on_batch(noise, valid_labels)
 
+
         # Plot the progress
         print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (step, d_loss[0], 100*d_loss[1], g_loss))
 
@@ -136,7 +137,7 @@ def build_models(args):
                                                args.generator_wd,
                                                args.generator_use_bn,
                                                args.activation,
-                                               "linear")
+                                               "sigmoid")
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
