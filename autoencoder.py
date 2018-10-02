@@ -4,7 +4,7 @@ from keras.layers import Dense, Activation, Reshape, Input, Lambda
 from keras import backend as K
 from keras.models import Model
 
-from util import AttrDict, print_model_shapes
+from util import *
 import model_IO
 import loss
 import vis
@@ -23,12 +23,15 @@ def run(args, data):
     assert set(("ae", "encoder", "generator")) <= set(models.keys()), models.keys()
     
     print("Encoder architecture:")
-    print_model_shapes(models.encoder)
+    print_model(models.encoder)
     print("Generator architecture:")
-    print_model_shapes(models.generator)
+    print_model(models.generator)
 
     # get losses
-    losses, metrics = loss.loss_factory(args, loss_features)
+    loss_names = sorted(set(args.loss_encoder + args.loss_generator))
+    losses = loss.loss_factory(loss_names, args, loss_features, combine_with_weights=True)
+    metric_names = sorted(set(args.metrics + tuple(loss_names)))
+    metrics = loss.loss_factory(metric_names, args, loss_features, combine_with_weights=False)
 
     # get optimizer
     if args.optimizer == "rmsprop":
