@@ -61,6 +61,10 @@ def getArgs():
     parser.add_argument('--discriminator_wd', dest="discriminator_wd", type=float, default=0.0, help="Weight decay param for the discriminator")
     parser.add_argument('--discriminator_use_bn', dest="discriminator_use_bn", default="False", help="True/False: Use batch norm in discriminator")
     parser.add_argument('--discriminator_dims', dest="discriminator_dims", default="1000,1000", help="Widths of discriminator layers")
+
+    # gan
+    parser.add_argument('--gan_generator_update', dest="gan_generator_update", type=int, default=1, help="number of generator updates in one step")
+    parser.add_argument('--gan_discriminator_update', dest="gan_discriminator_update", type=int, default=1, help="number of discriminator updates in one step")
     
     # parser.add_argument('--clipValue', dest="clipValue", type=float, default=0.01, help="Critic clipping range is (-clipValue, clipValue)")
     # parser.add_argument('--gradient_penalty', dest="gradient_penalty", default="no", help="no/grad/grad_orig")

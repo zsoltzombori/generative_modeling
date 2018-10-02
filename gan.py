@@ -17,6 +17,10 @@ import networks.dense
 def run(args, data):
     (x_train, x_test) = data
 
+    # vanilla gan works better if images are scaled to [-1,1]
+    # if you change this, make sure that the output of the generator is not a tanh
+    x_train = (x_train * 2) - 1
+    
     models, loss_features = build_models(args)
     assert set(("generator", "discriminator", "gen_disc")) <= set(models.keys()), models.keys()
 
@@ -63,31 +67,29 @@ def run(args, data):
         # ---------------------
         #  Train Discriminator
         # ---------------------
-        
-        # Select a random batch of images
-        idx = np.random.randint(0, x_train.shape[0], args.batch_size)
-        imgs = x_train[idx]
 
-        noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
-        # Generate a batch of new images
-        gen_imgs = models.generator.predict(noise)
+        for i in range(args.gan_discriminator_update):
+            # Select a random batch of images
+            idx = np.random.randint(0, x_train.shape[0], args.batch_size)
+            imgs = x_train[idx]
 
-        # mix the two batches
-        in_batch1 = np.concatenate([imgs[:half], gen_imgs[:half]])
-        in_batch2 = np.concatenate([imgs[half:], gen_imgs[half:]])
+            noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
+            # Generate a batch of new images
+            gen_imgs = models.generator.predict(noise)
+
+            # mix the two batches
+            in_batch1 = np.concatenate([imgs[:half], gen_imgs[:half]])
+            in_batch2 = np.concatenate([imgs[half:], gen_imgs[half:]])
         
-        # Train the discriminator
-        # d_loss_real = models.discriminator.train_on_batch(imgs, valid_labels)
-        # d_loss_fake = models.discriminator.train_on_batch(gen_imgs, fake_labels)
-        # d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
-        d_loss1 = models.discriminator.train_on_batch(in_batch1, out_batch1)
-        d_loss2 = models.discriminator.train_on_batch(in_batch2, out_batch2)
-        d_loss = 0.5 * (np.add(d_loss1, d_loss2))
+            # Train the discriminator
+            d_loss1 = models.discriminator.train_on_batch(in_batch1, out_batch1)
+            d_loss2 = models.discriminator.train_on_batch(in_batch2, out_batch2)
+            d_loss = 0.5 * (np.add(d_loss1, d_loss2))
         
         # ---------------------
         #  Train Generator
         # ---------------------
-        for i in range(4):
+        for i in range(args.gan_generator_update):
             noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
             # Train the generator (to have the discriminator label samples as valid)
             g_loss = models.gen_disc.train_on_batch(noise, valid_labels)
@@ -128,7 +130,7 @@ def build_models(args):
                                                args.generator_wd,
                                                args.generator_use_bn,
                                                args.activation,
-                                               "sigmoid")
+                                               "tanh")
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
