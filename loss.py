@@ -32,6 +32,9 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
     def binary_crossentropy_loss(x, x_decoded):
         loss = objectives.binary_crossentropy(x, x_decoded)
         return K.mean(loss)
+    def gan_generator_loss(x, x_decoded):
+        loss = - K.log(x_decoded)
+        return K.mean(loss)
     def accuracy(x, x_decoded):
         acc = metrics.binary_accuracy(x, x_decoded)
         return K.mean(acc)
