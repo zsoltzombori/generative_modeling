@@ -30,8 +30,9 @@ def displayRandom(shape, args, models, sampler, name):
 
 # display one batch of reconstructed images
 def displayReconstructed(imageBatch, args, models, name):
-    recons = models.ae.predict(imageBatch, batch_size=args.batch_size)
-    mergedSet = mergeSets([imageBatch, recons])
+    x_imageBatch, y_imageBatch = imageBatch
+    recons = models.ae.predict([x_imageBatch, y_imageBatch], batch_size=args.batch_size)
+    mergedSet = mergeSets([x_imageBatch, recons])
     plotImages(mergedSet, 10, 2*args.batch_size // 10, name)
 
 

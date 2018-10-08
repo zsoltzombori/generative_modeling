@@ -10,6 +10,7 @@ import model_IO
 import loss
 import vis
 import samplers
+import callbacks
 
 import networks.dense
 
@@ -19,7 +20,7 @@ def run(args, data):
 
     models, loss_features = build_models(args)
     assert set(("ae", "encoder", "generator")) <= set(models.keys()), models.keys()
-    
+
     print("Encoder architecture:")
     print_model_shapes(models.encoder)
     print("Generator architecture:")
@@ -27,6 +28,8 @@ def run(args, data):
 
     # get losses
     losses, metrics = loss.loss_factory(args, loss_features)
+
+    sampler = samplers.sampler_factory(args)
 
     # get optimizer
     if args.optimizer == "rmsprop":
@@ -43,15 +46,16 @@ def run(args, data):
 
     # TODO specify callbacks
     cbs = []
+    cbs.append(callbacks.ImageDisplayCallback((x_train, y_train), (x_test, y_test), args, models, sampler))
 
     # train the autoencoder
-    models.ae.fit((x_train, y_train), x_train,
+    models.ae.fit([x_train, y_train], x_train,
                   verbose=args.verbose,
                   shuffle=True,
                   epochs=args.nb_epoch,
                   batch_size=args.batch_size,
-                  callbacks = cbs)
-                  # validation_data=((x_test, y_test), x_test)
+                  callbacks = cbs,
+                  validation_data=[[x_test, y_test], x_test])
     # )
 
     # save models
@@ -74,37 +78,34 @@ def run(args, data):
     # vis.plotMVVM(x_train, encoder, encoder_var, args.batch_size, "{}-mvvm.png".format(args.prefix))
 
 
-
 def build_models(args):
     loss_features = AttrDict({})
 
     input_x = Input(shape=args.original_shape)
-    input_y = Input(shape=(args.y_label_count,))
-    concat_layer = Concatenate()
-    merged = concat_layer((Flatten()(input_x), input_y))
-    merge_model = Model(inputs=[input_x, input_y], output = merge)
+    input_y = Input(shape=(args.y_label_count, ))
+    merged = Concatenate()([Flatten()(input_x), input_y])
+    merge_model = Model(inputs=[input_x, input_y], outputs = merged)
     concatenated_input_size = np.prod(args.original_shape) + args.y_label_count
 
-    input_y2 = Input(shape=args.y_label_count)
-    input_latent = Input(shape=args.latent_dim)
-    concat_layer2 = Concatenate()
-    merged_latent = concat_layer((input_latent, input_y2))
-    merge_latent_model = Model(inputs=[input_latent, input_y2], output = merged_latent)
+    input_latent = Input(shape=(args.latent_dim, ))
+    input_y2 = Input(shape=(args.y_label_count, ))
+    merged_latent = Concatenate()([input_latent, input_y2])
+    merge_latent_model = Model(inputs=[input_latent, input_y2], outputs = merged_latent)
 
     if args.sampling:
         encoder_output_shape = (args.latent_dim, 2)
     else:
         encoder_output_shape = (args.latent_dim, )
-        
+
     if args.encoder == "dense":
-        encoder = networks.dense.build_model(args.original_shape,
+        encoder = networks.dense.build_model((concatenated_input_size, ),
                                              encoder_output_shape,
                                              args.encoder_dims,
                                              args.encoder_wd,
                                              args.encoder_use_bn,
                                              args.activation,
                                              "linear")
-        encoder = Sequential([merge_model, encoder])
+        encoder = Model(inputs=[input_x, input_y], outputs=encoder(merge_model([input_x, input_y]))) # Sequential([merge_model, encoder])
     else:
         assert False, "Unrecognized value for encoder: {}".format(args.encoder)
 
@@ -117,24 +118,23 @@ def build_models(args):
                                                args.generator_use_bn,
                                                args.activation,
                                                "linear")
-        generator = Sequential([merge_latent_model, generator])
+        generator = Model(inputs=[input_latent, input_y2], outputs=generator(merge_latent_model([input_latent, input_y2])))
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
     if args.sampling:
+        hidden = encoder([input_x, input_y])
         sampler_model = add_gaussian_sampling(encoder_output_shape, args)
-
-        inputs = Input(shape=args.original_shape)
-        hidden = encoder(inputs)
         (z, z_mean, z_log_var) = sampler_model(hidden)
-        encoder = Model(inputs, [z, z_mean, z_log_var])
-        
+        output = generator([z, input_y])
+
         loss_features["z_mean"] = z_mean
         loss_features["z_log_var"] = z_log_var
-        output = generator(z, input_y)
         ae = Model(inputs=[input_x, input_y], outputs=output)
     else:
-        ae = Sequential([encoder, generator])
+        z = encoder([input_x, input_y])
+        output = generator([z, input_y]) # Sequential([encoder, generator])
+        ae = Model(inputs=[input_x, input_y], outputs=output)
 
     modelDict = AttrDict({})
     modelDict.ae = ae
