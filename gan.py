@@ -12,6 +12,7 @@ import vis
 import samplers
 
 import networks.dense
+import networks.version1_for_wgan
 
 
 def run(args, data):
@@ -53,8 +54,12 @@ def run(args, data):
 
 
     # Adversarial ground truths
-    valid_labels = np.ones((args.batch_size, 1))
-    fake_labels = np.zeros((args.batch_size, 1))
+    if(args.model_type=="WGAN"):
+        valid_labels = -np.ones((args.batch_size, 1))
+        fake_labels = np.ones((args.batch_size, 1))
+    else:
+        valid_labels = np.ones((args.batch_size, 1))
+        fake_labels = np.zeros((args.batch_size, 1))
 
     assert args.batch_size % 2 == 0
     half = args.batch_size // 2
@@ -67,7 +72,9 @@ def run(args, data):
         # ---------------------
         #  Train Discriminator
         # ---------------------
-
+        
+        models.discriminator.trainable=True
+        
         for i in range(args.gan_discriminator_update):
             # Select a random batch of images
             idx = np.random.randint(0, x_train.shape[0], args.batch_size)
@@ -85,7 +92,14 @@ def run(args, data):
             d_loss1 = models.discriminator.train_on_batch(in_batch1, out_batch1)
             d_loss2 = models.discriminator.train_on_batch(in_batch2, out_batch2)
             d_loss = 0.5 * (np.add(d_loss1, d_loss2))
-        
+            
+            if(args.model_type=="WGAN"):
+                for l in models.discriminator.layers:
+                    weights=l.get_weights()
+                    weights=[np.clip(w,-0.01,0.01) for w in weights]
+                    l.set_weights(weights)
+                    
+        models.discriminator.trainable=False
         # ---------------------
         #  Train Generator
         # ---------------------
@@ -119,6 +133,8 @@ def build_models(args):
                                                    args.discriminator_use_bn,
                                                    args.activation,
                                                    "sigmoid")
+    elif (args.discriminator== "wgan_disc"):
+        discriminator=networks.version1_for_wgan.build_discriminator((28,28,1));
     else:
         assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
 
@@ -131,6 +147,8 @@ def build_models(args):
                                                args.generator_use_bn,
                                                args.activation,
                                                "tanh")
+    elif (args.generator== "wgan_gen"):
+        generator=networks.version1_for_wgan.build_generator(args.latent_dim);
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 

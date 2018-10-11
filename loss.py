@@ -38,6 +38,8 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
     def accuracy(x, x_decoded):
         acc = metrics.binary_accuracy(x, x_decoded)
         return K.mean(acc)
+    def wasserstein_loss(y_true, y_pred):
+        return K.mean(y_true * y_pred)
 
     losses = []
     for loss in loss_names:
