@@ -58,9 +58,8 @@ def run(args, data):
     print(args.model_type)
     # Adversarial ground truths
     if(args.model_type=="wgan"):
-        valid_labels = -np.ones((args.batch_size, 1))
-        fake_labels = np.ones((args.batch_size, 1))
-        print("wwwwww\n\n\n\n\n\n")
+        valid_labels = np.ones((args.batch_size, 1))
+        fake_labels = -np.ones((args.batch_size, 1))
     else:
         valid_labels = np.ones((args.batch_size, 1))
         fake_labels = np.zeros((args.batch_size, 1))
