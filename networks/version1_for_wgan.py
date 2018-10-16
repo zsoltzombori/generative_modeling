@@ -52,12 +52,12 @@ def build_generator(latent_dim):
 	# Because we normalized training inputs to lie in the range [-1, 1],
 	# the tanh function should be used for the output of the generator to ensure its output
 	# also lies in this range.
-	model.add(Convolution2D(1, (5, 5), padding='same', activation='tanh'))
+	model.add(Convolution2D(1, (5, 5), padding='same', activation='linear'))
 	
 	inp=Input(shape=(latent_dim,))
 	out=model(inp)
-	
-	return Model(inp,out)
+	m=Model(inp,out)
+	return m
 	
 def build_discriminator(input_shape):
 	model = Sequential()
@@ -77,5 +77,5 @@ def build_discriminator(input_shape):
 
 	img = Input(shape=input_shape)
 	validity = model(img)
-	
-	return Model(img, validity)
+	m=Model(img, validity)
+	return m

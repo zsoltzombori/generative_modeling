@@ -22,6 +22,8 @@ def run(args, data):
     # if you change this, make sure that the output of the generator is not a tanh
     x_train = (x_train * 2) - 1
     
+    print(np.shape(x_train))
+    x_train=x_train.reshape(-1,28,28,1)
     models, loss_features = build_models(args)
     assert set(("generator", "discriminator", "gen_disc")) <= set(models.keys()), models.keys()
 
@@ -53,19 +55,25 @@ def run(args, data):
     models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
 
 
+    print(args.model_type)
     # Adversarial ground truths
-    if(args.model_type=="WGAN"):
+    if(args.model_type=="wgan"):
         valid_labels = -np.ones((args.batch_size, 1))
         fake_labels = np.ones((args.batch_size, 1))
+        print("wwwwww\n\n\n\n\n\n")
     else:
         valid_labels = np.ones((args.batch_size, 1))
         fake_labels = np.zeros((args.batch_size, 1))
 
     assert args.batch_size % 2 == 0
     half = args.batch_size // 2
-    out_batch1 = np.concatenate([valid_labels[:half], fake_labels[:half]])
-    out_batch2 = np.concatenate([valid_labels[half:], fake_labels[half:]])
-
+    if(args.model_type!="wgan"):
+        out_batch1 = np.concatenate([valid_labels[:half], fake_labels[:half]])
+        out_batch2 = np.concatenate([valid_labels[half:], fake_labels[half:]])
+    else:
+        out_batch1=valid_labels
+        out_batch2=fake_labels
+        
     sampler = samplers.sampler_factory(args)
 
     for step in range(args.training_steps):
@@ -74,6 +82,7 @@ def run(args, data):
         # ---------------------
         
         models.discriminator.trainable=True
+        for l in models.discriminator.layers: l.trainable = True
         
         for i in range(args.gan_discriminator_update):
             # Select a random batch of images
@@ -84,16 +93,19 @@ def run(args, data):
             # Generate a batch of new images
             gen_imgs = models.generator.predict(noise)
 
-            # mix the two batches
-            in_batch1 = np.concatenate([imgs[:half], gen_imgs[:half]])
-            in_batch2 = np.concatenate([imgs[half:], gen_imgs[half:]])
-        
+            if(args.model_type!="wgan"):
+                # mix the two batches
+                in_batch1 = np.concatenate([imgs[:half], gen_imgs[:half]])
+                in_batch2 = np.concatenate([imgs[half:], gen_imgs[half:]])
+            else:
+                in_batch1=imgs
+                in_batch2=gen_imgs
             # Train the discriminator
             d_loss1 = models.discriminator.train_on_batch(in_batch1, out_batch1)
             d_loss2 = models.discriminator.train_on_batch(in_batch2, out_batch2)
             d_loss = 0.5 * (np.add(d_loss1, d_loss2))
             
-            if(args.model_type=="WGAN"):
+            if(args.model_type=="wgan"):
                 for l in models.discriminator.layers:
                     weights=l.get_weights()
                     weights=[np.clip(w,-0.01,0.01) for w in weights]
@@ -134,6 +146,7 @@ def build_models(args):
                                                    args.activation,
                                                    "sigmoid")
     elif (args.discriminator== "wgan_disc"):
+        print("===============wgan disc=============="); 
         discriminator=networks.version1_for_wgan.build_discriminator((28,28,1));
     else:
         assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
@@ -148,6 +161,7 @@ def build_models(args):
                                                args.activation,
                                                "tanh")
     elif (args.generator== "wgan_gen"):
+        print("===============wgan gen=============="); 
         generator=networks.version1_for_wgan.build_generator(args.latent_dim);
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
