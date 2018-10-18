@@ -22,8 +22,6 @@ def run(args, data):
     # if you change this, make sure that the output of the generator is not a tanh
     x_train = (x_train * 2) - 1
     
-    print(np.shape(x_train))
-    x_train=x_train.reshape(-1,28,28,1)
     models, loss_features = build_models(args)
     assert set(("generator", "discriminator", "gen_disc")) <= set(models.keys()), models.keys()
 
@@ -55,11 +53,11 @@ def run(args, data):
     models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
 
 
-    print(args.model_type)
+    print("===== Model type: "+args.model_type+" =====")
     # Adversarial ground truths
     if(args.model_type=="wgan"):
-        valid_labels = np.ones((args.batch_size, 1))
-        fake_labels = -np.ones((args.batch_size, 1))
+        valid_labels = -np.ones((args.batch_size, 1))
+        fake_labels = np.ones((args.batch_size, 1))
     else:
         valid_labels = np.ones((args.batch_size, 1))
         fake_labels = np.zeros((args.batch_size, 1))
@@ -161,7 +159,7 @@ def build_models(args):
                                                "tanh")
     elif (args.generator== "wgan_gen"):
         print("===============wgan gen=============="); 
-        generator=networks.version1_for_wgan.build_generator(args.latent_dim);
+        generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear);
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 

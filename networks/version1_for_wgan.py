@@ -27,7 +27,7 @@ def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_ac
     model = Model(inputs=inputs, outputs=outputs)
     return model
     
-def build_generator(latent_dim):
+def build_generator(latent_dim,linear=false):
 	model = Sequential()
 	model.add(Dense(1024, input_dim=100))
 	model.add(LeakyReLU())
@@ -52,8 +52,10 @@ def build_generator(latent_dim):
 	# Because we normalized training inputs to lie in the range [-1, 1],
 	# the tanh function should be used for the output of the generator to ensure its output
 	# also lies in this range.
-	model.add(Convolution2D(1, (5, 5), padding='same', activation='linear'))
-	
+	if(linear):
+		model.add(Convolution2D(1, (5, 5), padding='same', activation='linear'))
+	else:
+		model.add(Convolution2D(1, (5, 5), padding='same', activation='tanh'))
 	inp=Input(shape=(latent_dim,))
 	out=model(inp)
 	m=Model(inp,out)
