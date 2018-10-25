@@ -29,6 +29,8 @@ def run(args, data):
     print_model(models.discriminator)
     print("Generator architecture:")
     print_model(models.generator)
+    
+    
 
     # get losses
     loss_discriminator = loss.loss_factory(args.loss_discriminator, args, loss_features, combine_with_weights=True)
@@ -51,7 +53,7 @@ def run(args, data):
     models.discriminator.compile(optimizer=optimizer, loss=loss_discriminator, metrics=metrics)
     models.discriminator.trainable = False # For the combined model we will only train the generator
     models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
-
+    models.gradient.compile(optimizer=Adam(args.lr),loss=mse_loss)
 
     print("===== Model type: "+args.model_type+" =====")
     # Adversarial ground truths
@@ -86,10 +88,11 @@ def run(args, data):
             d_loss = 0.5 * (np.add(d_loss1, d_loss2))
             
             if(args.model_type=="wgan"):
-                for l in models.discriminator.layers:
-                    weights=l.get_weights()
-                    weights=[np.clip(w,-0.01,0.01) for w in weights]
-                    l.set_weights(weights)
+                d_loss3 = models.gradient.train_on_batch(generate_interpol_images(valid,fake),valid_labels)
+                #for l in models.discriminator.layers:
+                #    weights=l.get_weights()
+                #    weights=[np.clip(w,-0.01,0.01) for w in weights]
+                #    l.set_weights(weights)
                     
         models.discriminator.trainable=False
         for l in models.discriminator.layers: l.trainable = False
@@ -153,5 +156,21 @@ def build_models(args):
     modelDict.gen_disc = gen_disc
     modelDict.discriminator = discriminator
     modelDict.generator = generator
+    
+    if(args.model_type=="wgan"):
+        inp=Input(args.original_shape)
+        out=discriminator(inp)
+        out_grad=K.gradients(out,inp)[0]
+        slope=K.sum(K.square(out_grad),[1,2,3])
+        gradient=Model(inputs=inp,outputs=slope)
+        
+        modelDict.gradient=gradient
 
     return modelDict, loss_features
+
+
+def generate_interpol_images(valid,fake):
+    size=np.shape(valid)[0]
+    alfa=np.random(size)
+    
+    return alfa*valid+(1-alfa)*fake
