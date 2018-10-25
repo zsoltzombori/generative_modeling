@@ -11,7 +11,7 @@ args = parser.parse_args()
 file_location = args.path
 output_number = args.output_number
 
-data = np.load(file_location)
+data = np.load(file_location, encoding="latin1")
 print(data.keys())
 
 n = len(data['imgs'])
@@ -24,8 +24,8 @@ for x in range(output_number):
     a = np.array([r])
     indices = np.append(indices, a, axis=0)
 
-imgs = data['imgs'][indices]
+imgs = 255*data['imgs'][indices]
 latents_classes = data['latents_classes'][indices]
 latents_values = data['latents_values'][indices]
 
-np.savez("datasets/reduced.npz", metadata=data['metadata'], imgs=imgs, latents_classes=latents_classes, latents_values=latents_values)
+np.savez_compressed("datasets/reduced", metadata=data['metadata'], imgs=imgs, latents_classes=latents_classes, latents_values=latents_values)
