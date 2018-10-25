@@ -27,7 +27,7 @@ def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_ac
     model = Model(inputs=inputs, outputs=outputs)
     return model
     
-def build_generator(latent_dim,linear=false):
+def build_generator(latent_dim,linear=False):
 	model = Sequential()
 	model.add(Dense(1024, input_dim=100))
 	model.add(LeakyReLU())

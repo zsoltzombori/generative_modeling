@@ -55,21 +55,11 @@ def run(args, data):
 
     print("===== Model type: "+args.model_type+" =====")
     # Adversarial ground truths
-    if(args.model_type=="wgan"):
-        valid_labels = -np.ones((args.batch_size, 1))
-        fake_labels = np.ones((args.batch_size, 1))
-    else:
-        valid_labels = np.ones((args.batch_size, 1))
-        fake_labels = np.zeros((args.batch_size, 1))
+    valid_labels = np.ones((args.batch_size, 1))
+    fake_labels = np.zeros((args.batch_size, 1))
 
     assert args.batch_size % 2 == 0
     half = args.batch_size // 2
-    if(args.model_type!="wgan"):
-        out_batch1 = np.concatenate([valid_labels[:half], fake_labels[:half]])
-        out_batch2 = np.concatenate([valid_labels[half:], fake_labels[half:]])
-    else:
-        out_batch1=valid_labels
-        out_batch2=fake_labels
         
     sampler = samplers.sampler_factory(args)
 
@@ -90,16 +80,9 @@ def run(args, data):
             # Generate a batch of new images
             gen_imgs = models.generator.predict(noise)
 
-            if(args.model_type!="wgan"):
-                # mix the two batches
-                in_batch1 = np.concatenate([imgs[:half], gen_imgs[:half]])
-                in_batch2 = np.concatenate([imgs[half:], gen_imgs[half:]])
-            else:
-                in_batch1=imgs
-                in_batch2=gen_imgs
             # Train the discriminator
-            d_loss1 = models.discriminator.train_on_batch(in_batch1, out_batch1)
-            d_loss2 = models.discriminator.train_on_batch(in_batch2, out_batch2)
+            d_loss1 = models.discriminator.train_on_batch(imgs,valid_labels)
+            d_loss2 = models.discriminator.train_on_batch(gen_imgs, fake_labels)
             d_loss = 0.5 * (np.add(d_loss1, d_loss2))
             
             if(args.model_type=="wgan"):
@@ -109,6 +92,7 @@ def run(args, data):
                     l.set_weights(weights)
                     
         models.discriminator.trainable=False
+        for l in models.discriminator.layers: l.trainable = False
         # ---------------------
         #  Train Generator
         # ---------------------
