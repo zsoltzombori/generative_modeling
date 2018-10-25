@@ -609,7 +609,7 @@ class Dataset_dsprite(Dataset_real):
         super(Dataset_dsprite, self).__init__("dsprite", shape, color=False)
 
         if shape==(64, 64):
-            cacheFile = "datasets/dsprite.npz"
+            cacheFile = "datasets/reduced.npz"
         else:
             assert False, "We don't have a bedroom dataset with size {}".format(shape)
         if os.path.isfile(cacheFile):
