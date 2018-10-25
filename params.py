@@ -81,7 +81,7 @@ def getArgs():
     args = params_parse.mergeParamsWithInis(args_param)
 
     # make sure the following params are tuples
-    for k in ("encoder_dims", "generator_dims", "discriminator_dims", "loss_encoder", "loss_generator", "loss_discriminator", "metrics", "shape"):
+    for k in ("encoder_dims", "generator_dims", "discriminator_dims", "loss_encoder", "loss_generator", "loss_discriminator", "metrics", "shape", "discriminator_conv_channels"):
         args[k] = ensure_tuple(args[k])
         
     

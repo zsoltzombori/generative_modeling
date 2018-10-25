@@ -11,7 +11,7 @@ import loss
 import vis
 import samplers
 
-import networks.dense
+from networks import dense, conv
 
 
 def run(args, data):
@@ -40,7 +40,7 @@ def run(args, data):
     if args.optimizer == "rmsprop":
         optimizer = RMSprop(lr=args.lr, clipvalue=1.0)
     elif args.optimizer == "adam":
-        optimizer = Adam(lr=args.lr, epsilon=0.5)
+        optimizer = Adam(lr=args.lr, beta_1=0.5)
     elif args.optimizer == "sgd":
         optimizer = SGD(lr = args.lr, clipvalue=1.0)
     else:
@@ -112,25 +112,15 @@ def build_models(args):
     loss_features = AttrDict({})
             
     if args.discriminator == "dense":
-        discriminator = networks.dense.build_model(args.original_shape,
-                                                   [1],
-                                                   args.discriminator_dims,
-                                                   args.discriminator_wd,
-                                                   args.discriminator_use_bn,
-                                                   args.activation,
-                                                   "sigmoid")
+        discriminator = dense.build_model(args.original_shape, [1], args.discriminator_dims, args.discriminator_wd, args.discriminator_use_bn, args.activation, "sigmoid")
+    elif args.discriminator == "conv":
+        discriminator = conv.build_model(args.original_shape, [1], args.discriminator_conv_channels, args.discriminator_wd, args.discriminator_use_bn, args.activation, "sigmoid")
     else:
         assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
 
     generator_input_shape = (args.latent_dim, )
     if args.generator == "dense":
-        generator = networks.dense.build_model(generator_input_shape,
-                                               args.original_shape,
-                                               args.generator_dims,
-                                               args.generator_wd,
-                                               args.generator_use_bn,
-                                               args.activation,
-                                               "tanh")
+        generator = dense.build_model(generator_input_shape, args.original_shape, args.generator_dims, args.generator_wd, args.generator_use_bn, args.activation, "tanh")
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
