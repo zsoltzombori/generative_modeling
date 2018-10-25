@@ -4,12 +4,14 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation, Reshape, Input, Lambda, GaussianNoise
 from keras import backend as K
 from keras.models import Model
+from functools import partial
 
 from util import *
 import model_IO
 import loss
 import vis
 import samplers
+import util
 
 import networks.dense
 import networks.version1_for_wgan
@@ -43,26 +45,35 @@ def run(args, data):
     if args.optimizer == "rmsprop":
         optimizer = RMSprop(lr=args.lr, clipvalue=1.0)
     elif args.optimizer == "adam":
-        optimizer = Adam(lr=args.lr, epsilon=0.5)
+        optimizer = Adam(lr=args.lr)
     elif args.optimizer == "sgd":
         optimizer = SGD(lr = args.lr, clipvalue=1.0)
     else:
         assert False, "Unknown optimizer %s" % args.optimizer
-
+        
     # compile models
-    models.discriminator.compile(optimizer=optimizer, loss=loss_discriminator, metrics=metrics)
+    if args.model_type=="wgan-gp":
+        real_input = Input(args.original_shape)
+        fake_input = Input(args.original_shape)
+        interp_input = util.RandomWeightedAverage(args.batch_size)([real_input, fake_input])
+        real_output = models.discriminator(real_input)
+        fake_output = models.discriminator(fake_input)
+        interp_output = models.discriminator(interp_input)
+        models.discriminator = Model([real_input, fake_input], [real_output, fake_output, interp_output])
+        partial_gp_loss = partial(loss.gp_loss, interpolated=interp_input)
+        partial_gp_loss.__name__ = 'gp_loss'  # Functions need names or Keras will throw an error
+
+        models.discriminator.compile(optimizer=optimizer,loss=[loss_discriminator, loss_discriminator,partial_gp_loss], metrics=metrics)
+    else:
+        models.discriminator.compile(optimizer=optimizer, loss=loss_discriminator, metrics=metrics)
     models.discriminator.trainable = False # For the combined model we will only train the generator
     models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
-    models.gradient.compile(optimizer=Adam(args.lr),loss=mse_loss)
 
     print("===== Model type: "+args.model_type+" =====")
     # Adversarial ground truths
     valid_labels = np.ones((args.batch_size, 1))
     fake_labels = np.zeros((args.batch_size, 1))
 
-    assert args.batch_size % 2 == 0
-    half = args.batch_size // 2
-        
     sampler = samplers.sampler_factory(args)
 
     for step in range(args.training_steps):
@@ -83,16 +94,20 @@ def run(args, data):
             gen_imgs = models.generator.predict(noise)
 
             # Train the discriminator
-            d_loss1 = models.discriminator.train_on_batch(imgs,valid_labels)
-            d_loss2 = models.discriminator.train_on_batch(gen_imgs, fake_labels)
-            d_loss = 0.5 * (np.add(d_loss1, d_loss2))
+            if args.model_type=="wgan-gp":
+                d_loss = models.discriminator.train_on_batch([imgs, gen_imgs], [valid_labels, fake_labels, valid_labels])
+                print(d_loss)
+                xxx
+            else:
+                d_loss1 = models.discriminator.train_on_batch(imgs,valid_labels)
+                d_loss2 = models.discriminator.train_on_batch(gen_imgs, fake_labels)
+                d_loss = 0.5 * (np.add(d_loss1, d_loss2))
             
             if(args.model_type=="wgan"):
-                d_loss3 = models.gradient.train_on_batch(generate_interpol_images(valid,fake),valid_labels)
-                #for l in models.discriminator.layers:
-                #    weights=l.get_weights()
-                #    weights=[np.clip(w,-0.01,0.01) for w in weights]
-                #    l.set_weights(weights)
+                for l in models.discriminator.layers:
+                   weights=l.get_weights()
+                   weights=[np.clip(w,-0.01,0.01) for w in weights]
+                   l.set_weights(weights)
                     
         models.discriminator.trainable=False
         for l in models.discriminator.layers: l.trainable = False
@@ -157,14 +172,18 @@ def build_models(args):
     modelDict.discriminator = discriminator
     modelDict.generator = generator
     
-    if(args.model_type=="wgan"):
-        inp=Input(args.original_shape)
-        out=discriminator(inp)
-        out_grad=K.gradients(out,inp)[0]
-        slope=K.sum(K.square(out_grad),[1,2,3])
-        gradient=Model(inputs=inp,outputs=slope)
+    # # if(args.model_type=="wgan"):
+    # #     inp=Input(args.original_shape)
+    # #     out=discriminator(inp)
+    # #     print(K.int_shape(inp))
+    # #     print(K.int_shape(out))
+    # #     slope = Lambda(lambda arg: K.sum(K.square(K.gradients(arg[1], [arg[0]])),axis=[K.int_shape(inp)[1:]]), output_shape=(1,)) ([inp,out]) 
+
+    #     # out_grad=K.gradients(out,inp)[0]
+    #     # slope=K.sum(K.square(out_grad),[1,2,3])
+    #     # gradient=Model(inputs=inp,outputs=slope)
         
-        modelDict.gradient=gradient
+        # modelDict.gradient=gradient
 
     return modelDict, loss_features
 
