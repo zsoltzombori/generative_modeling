@@ -1,6 +1,9 @@
 import numpy as np
 import spicy
 import vis
+import load_models
+import params
+args = params.getArgs()
 
 # lables in latents_values idx: ('color':0, 'shape':1, 'scale':2, 'orientation':3, 'posX':4, 'posY':5)
 # lables in latents_values qnty: ('color':1, 'shape':3, 'scale':6, 'orientation':40, 'posX':32, 'posY':32)
@@ -27,6 +30,16 @@ def get_images(indices):
     imgs = data['imgs']
     return imgs[indices]
 
-#idc = find_indices_shift(2, 5, 39)
-#images = get_images(idc)
+idc = find_indices_shift(2, 5, 39)
+images = get_images(idc)
 #vis.plotImages(np.expand_dims(images, axis=3), 32, 32, 'pictures/lookup/test')
+
+modelDict = load_models.load_autoencoder(args)
+ae = modelDict.ae
+encoder = modelDict.encoder
+encoder_var = modelDict.encoder_var
+generator = modelDict.generator
+
+batch_size = args.batch_size
+res = encoder.predict(images, batch_size = batch_size)
+print(res)
