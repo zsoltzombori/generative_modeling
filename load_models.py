@@ -1,5 +1,5 @@
 from exp import AttrDict
-import model
+#import model
 
 def loadModel(filePrefix):
     jsonFile = filePrefix + ".json"
