@@ -1,6 +1,5 @@
 import numpy as np
 import argparse
-import spicy
 from random import randint
 from tempfile import TemporaryFile
 

@@ -1,7 +1,8 @@
 import numpy as np
-import spicy
 import vis
-import load_models
+import load_models_IO
+from sklearn.decomposition import PCA
+from matplotlib import pyplot as plt
 import params
 args = params.getArgs()
 
@@ -30,16 +31,26 @@ def get_images(indices):
     imgs = data['imgs']
     return imgs[indices]
 
-idc = find_indices_shift(2, 5, 39)
-images = get_images(idc)
-#vis.plotImages(np.expand_dims(images, axis=3), 32, 32, 'pictures/lookup/test')
-
-modelDict = load_models.load_autoencoder(args)
-ae = modelDict.ae
+modelDict = load_models_IO.load_autoencoder(args)
 encoder = modelDict.encoder
-encoder_var = modelDict.encoder_var
-generator = modelDict.generator
 
-batch_size = args.batch_size
-res = encoder.predict(images, batch_size = batch_size)
-print(res)
+for o in range(25, 30):
+    for s in range(0,2):
+
+        idc = find_indices_shift(2, s, o)
+        images = get_images(idc)
+        #vis.plotImages(np.expand_dims(images, axis=3), 32, 32, 'pictures/lookup/test
+
+        batch_size = args.batch_size
+        images = np.expand_dims(images, axis=3)
+        images = images[:(len(images) // args.batch_size * args.batch_size)]
+        res = encoder.predict(images, batch_size = batch_size)
+        pca = PCA(n_components=2)
+        points = pca.fit_transform(res[1])
+        x, y = points.T
+        colors = [ [(i%32)/32, (i-i%32)/1024, 0] for i in range(1000)]
+        name = "pictures/mass/plot_scale" + str(s) + "ori" + str(o)
+        plt.scatter(x, y, c=colors)
+        plt.savefig(name)
+        print(name + ".png is created!")
+        plt.close()
