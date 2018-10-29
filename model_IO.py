@@ -1,4 +1,5 @@
 from util import AttrDict
+from keras.models import model_from_json
 
 def loadModel(filePrefix):
     jsonFile = filePrefix + ".json"
