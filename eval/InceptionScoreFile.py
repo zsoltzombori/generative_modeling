@@ -32,19 +32,11 @@ if len(sys.argv) == 4 or (len(sys.argv) == 3 and nchw == False) :
     print( 'Real data loaded...')
     is_real = True;
 
-splitnum = 4
+splitnum = 1
 
 if nchw == False:
     print('Transposing gen_data')
     gen_data = nhwc2nchw(gen_data)
-
-    # slicing the arrays -> REMOVE IT LATER:
-#gen_data = gen_data[:200]
-#real_data = gen_data
-#is_real = True
-#nchw = True
-
-#print ('Shape: ' , gen_data.shape)
 
 if is_real == False:
     print('Calculating Inception Score...')

@@ -36,11 +36,8 @@ if nchw == False:
     gen_data = nhwc2nchw(gen_data)
     real_data = nhwc2nchw(real_data)
     
-# slicing the arrays -> REMOVE IT LATER:
-gen_data = gen_data[:200]
-real_data = gen_data
 
-splitnum = 4;
+splitnum = 1;
 
 print ('Calculating Frechet Inception Distance...')
 FIDS = F.FID(gen_data, real_data, splitnum)
