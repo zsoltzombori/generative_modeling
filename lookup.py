@@ -1,6 +1,6 @@
 import numpy as np
 import vis
-import load_models_IO
+import model_IO
 from sklearn.decomposition import PCA
 from matplotlib import pyplot as plt
 import params
@@ -31,7 +31,7 @@ def get_images(indices):
     imgs = data['imgs']
     return imgs[indices]
 
-modelDict = load_models_IO.load_autoencoder(args)
+modelDict = model_IO.load_autoencoder(args)
 encoder = modelDict.encoder
 
 for o in range(25, 30):
