@@ -96,10 +96,25 @@ def build_models(args):
                                              args.encoder_use_bn,
                                              args.activation,
                                              "linear")
+
+     elif args.encoder == "convolutional":
+        encoder = networks.dense.build_conv_model((args.original_shape,),
+                                                  args.encoder_intermediate_dim,
+                                                  args.encoder_latent_dim,
+                                                  args.encoder_filters,
+                                                  args.encoder_kernel,
+                                                  args.encoder_wd,
+                                                  args.encoder_use_bn,
+                                                  args.activation,
+                                                  args.strides,
+                                                  args.padding)
+
+        encoder = Model(inputs = input_x, outputs = encoder(input_x))    
     else:
         assert False, "Unrecognized value for encoder: {}".format(args.encoder)
-
+        
     generator_input_shape = (args.latent_dim, )
+    
     if args.generator == "dense":
         generator = networks.dense.build_model(generator_input_shape,
                                                args.original_shape,
@@ -108,6 +123,18 @@ def build_models(args):
                                                args.generator_use_bn,
                                                args.activation,
                                                "linear")
+
+    elif args.generator == "convolutional":
+        generator = networks.dense.build_deconv_model(args.generator_filters,
+                                                      args.generator_kernel,
+                                                      args.generator_wd,
+                                                      args.generator_use_bn,
+                                                      args.activation,
+                                                      args.strides,
+                                                      args.padding)
+
+        generator = Model(inputs = input_latent, outputs = generator(input_latent))
+        
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
