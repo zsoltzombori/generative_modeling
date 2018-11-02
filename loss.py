@@ -38,7 +38,7 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
         acc = metrics.binary_accuracy(x, x_decoded)
         return K.mean(acc)
     def wasserstein_loss(x, x_decoded):
-        x=-(2*x-1)
+        x=(2*x-1)
         return K.mean(x*x_decoded)
     def gradient_penalty_loss(y_true, y_pred, averaged_samples, gradient_penalty_weight):
     

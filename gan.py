@@ -43,7 +43,7 @@ def run(args, data):
 
     # get optimizer
     if args.optimizer == "rmsprop":
-        optimizer = RMSprop(lr=args.lr, rho=args.rho)
+        optimizer = RMSprop(lr=args.lr)
     elif args.optimizer == "adam":
         optimizer = Adam(lr=args.lr)
     elif args.optimizer == "sgd":
