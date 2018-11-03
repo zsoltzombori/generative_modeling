@@ -50,7 +50,8 @@ def run(args, data):
         optimizer = SGD(lr = args.lr, clipvalue=1.0)
     else:
         assert False, "Unknown optimizer %s" % args.optimizer
-        
+    
+    
     # compile models
     if args.model_type=="wgan-gp":
         real_input = Input(args.original_shape)
@@ -66,6 +67,7 @@ def run(args, data):
         models.discriminator.compile(optimizer=optimizer,loss=[loss_discriminator, loss_discriminator,partial_gp_loss], metrics=metrics)
     else:
         models.discriminator.compile(optimizer=optimizer, loss=loss_discriminator, metrics=metrics)
+    
     models.discriminator.trainable = False # For the combined model we will only train the generator
     models.gen_disc.compile(optimizer=optimizer, loss=loss_generator)
 
@@ -97,7 +99,7 @@ def run(args, data):
 
             # Train the discriminator
             if args.model_type=="wgan-gp":
-                d_loss = models.discriminator.train_on_batch([imgs, gen_imgs], [valid_labels, fake_labels, dummy])
+                d_loss = models.discriminator.train_on_batch([imgs, gen_imgs], [valid_labels, fake_labels, dummy_y])
             else:
                 d_loss1 = models.discriminator.train_on_batch(imgs,valid_labels)
                 d_loss2 = models.discriminator.train_on_batch(gen_imgs, fake_labels)
