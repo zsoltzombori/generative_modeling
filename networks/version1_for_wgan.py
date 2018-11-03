@@ -16,11 +16,14 @@ class Improved_WGAN_paper_MNIST:
 	def build_generator(latent_dim,batch_norm=False,imp_dim=784):
 		DIM=inp_dim
 		model = Sequential()
+		
 		model.add(Dense(4*4*4*DIM,input_dim=latent_dim))
 		if(batch_norm):
 			model.add(BatchNormalization())
-		modell.add(ReLu())
-		#model.add(Reshape(!*DIM
+		model.add(ReLu())
+		model.add(Reshape((4*DIM,4,4)))
+		
+		model.add(Conv2DTranspose(64, (5, 5), strides=2))
 
 
 
@@ -83,10 +86,13 @@ def build_generator(latent_dim,linear=False,batch_norm=True):
 	# Because we normalized training inputs to lie in the range [-1, 1],
 	# the tanh function should be used for the output of the generator to ensure its output
 	# also lies in this range.
-	if(linear):
-		model.add(Convolution2D(1, (5, 5), padding='same', activation='linear'))
-	else:
-		model.add(Convolution2D(1, (5, 5), padding='same', activation='tanh'))
+	#if(linear):
+	#	model.add(Convolution2D(1, (5, 5), padding='same', activation='linear'))
+	#else:
+	#	model.add(Convolution2D(1, (5, 5), padding='same', activation='tanh'))
+	model.add(Convolution2D(1, (5, 5), padding='same', activation='sigmoid'))
+	#model.add(Dense(784,activation='linear'))
+	
 	inp=Input(shape=(latent_dim,))
 	out=model(inp)
 	m=Model(inp,out)
