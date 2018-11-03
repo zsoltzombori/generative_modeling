@@ -10,6 +10,33 @@ from keras.layers.advanced_activations import LeakyReLU
 
 import networks.net_blocks
 
+
+
+class Improved_WGAN_paper_MNIST:
+	def build_generator(latent_dim,batch_norm=False,imp_dim=784):
+		DIM=inp_dim
+		model = Sequential()
+		model.add(Dense(4*4*4*DIM,input_dim=latent_dim))
+		if(batch_norm):
+			model.add(BatchNormalization())
+		modell.add(ReLu())
+		#model.add(Reshape(!*DIM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_activation):
     inputs = Input(shape=input_shape)
     outputs = inputs
@@ -27,12 +54,13 @@ def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_ac
     model = Model(inputs=inputs, outputs=outputs)
     return model
     
-def build_generator(latent_dim,linear=False):
+def build_generator(latent_dim,linear=False,batch_norm=True):
 	model = Sequential()
 	model.add(Dense(1024, input_dim=100))
 	model.add(LeakyReLU())
 	model.add(Dense(128 * 7 * 7))
-	model.add(BatchNormalization())
+	if(batch_norm):
+		model.add(BatchNormalization())
 	model.add(LeakyReLU())
 	if K.image_data_format() == 'channels_first':
 		model.add(Reshape((128, 7, 7), input_shape=(128 * 7 * 7,)))
@@ -41,13 +69,16 @@ def build_generator(latent_dim,linear=False):
 		model.add(Reshape((7, 7, 128), input_shape=(128 * 7 * 7,)))
 		bn_axis = -1
 	model.add(Conv2DTranspose(128, (5, 5), strides=2, padding='same'))
-	model.add(BatchNormalization(axis=bn_axis))
+	if(batch_norm):
+		model.add(BatchNormalization(axis=bn_axis))
 	model.add(LeakyReLU())
 	model.add(Convolution2D(64, (5, 5), padding='same'))
-	model.add(BatchNormalization(axis=bn_axis))
+	if(batch_norm):
+		model.add(BatchNormalization(axis=bn_axis))
 	model.add(LeakyReLU())
 	model.add(Conv2DTranspose(64, (5, 5), strides=2, padding='same'))
-	model.add(BatchNormalization(axis=bn_axis))
+	if(batch_norm):
+		model.add(BatchNormalization(axis=bn_axis))
 	model.add(LeakyReLU())
 	# Because we normalized training inputs to lie in the range [-1, 1],
 	# the tanh function should be used for the output of the generator to ensure its output

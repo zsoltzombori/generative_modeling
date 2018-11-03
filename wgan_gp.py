@@ -108,7 +108,7 @@ def run(args, data):
                                   wasserstein_loss,
                                   partial_gp_loss])
                                   
-    positive_y = -np.ones((args.batch_size, 1), dtype=np.float32)
+    positive_y = np.ones((args.batch_size, 1), dtype=np.float32)
     negative_y = -positive_y
     dummy_y = np.zeros((args.batch_size, 1), dtype=np.float32)
     
@@ -119,7 +119,7 @@ def run(args, data):
         #  Train Discriminator
         # ---------------------
 
-        
+        models.discriminator.trainable=True
         for i in range(args.gan_discriminator_update):
             # Select a random batch of images
             idx = np.random.randint(0, x_train.shape[0], args.batch_size)
@@ -128,7 +128,8 @@ def run(args, data):
             noise = np.random.rand(BATCH_SIZE, 100).astype(np.float32)
 
             d_loss = discriminator_model.train_on_batch([imgs, noise],[positive_y, negative_y, dummy_y])
-                    
+                  
+        models.discriminator.trainable=False;
         # ---------------------
         #  Train Generator
         # ---------------------
@@ -179,7 +180,7 @@ def build_models(args):
                                                "tanh")
     elif (args.generator== "wgan_gen"):
         print("===============wgan gen=============="); 
-        generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear);
+        generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
