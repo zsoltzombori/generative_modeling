@@ -72,7 +72,9 @@ def run(args, data):
     print("===== Model type: "+args.model_type+" =====")
     # Adversarial ground truths
     valid_labels = np.ones((args.batch_size, 1))
-    fake_labels = np.zeros((args.batch_size, 1))
+    #fake_labels = np.zeros((args.batch_size, 1))
+    fake_labels = -np.ones((args.batch_size, 1))
+    dummy_y= np.zeros((args.batch_size, 1))
 
     sampler = samplers.sampler_factory(args)
 
@@ -95,7 +97,7 @@ def run(args, data):
 
             # Train the discriminator
             if args.model_type=="wgan-gp":
-                d_loss = models.discriminator.train_on_batch([imgs, gen_imgs], [valid_labels, fake_labels, valid_labels])
+                d_loss = models.discriminator.train_on_batch([imgs, gen_imgs], [valid_labels, fake_labels, dummy])
             else:
                 d_loss1 = models.discriminator.train_on_batch(imgs,valid_labels)
                 d_loss2 = models.discriminator.train_on_batch(gen_imgs, fake_labels)
