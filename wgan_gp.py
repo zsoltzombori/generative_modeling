@@ -61,23 +61,6 @@ def run(args, data):
     print("Generator architecture:")
     print_model(models.generator)
 
-    # get losses
-    loss_discriminator = loss.loss_factory(args.loss_discriminator, args, loss_features, combine_with_weights=True)
-    loss_generator = loss.loss_factory(args.loss_generator, args, loss_features, combine_with_weights=True)
-    metric_names = sorted(set(args.metrics + args.loss_discriminator + args.loss_generator))
-    metrics = loss.loss_factory(metric_names, args, loss_features, combine_with_weights=False)
-    
-
-    # get optimizer
-    if args.optimizer == "rmsprop":
-        optimizer = RMSprop(lr=args.lr)
-    elif args.optimizer == "adam":
-        optimizer = Adam(lr=args.lr)
-    elif args.optimizer == "sgd":
-        optimizer = SGD(lr = args.lr, clipvalue=1.0)
-    else:
-        assert False, "Unknown optimizer %s" % args.optimizer
-    
     ##### Build GENERATOR: #####
     for layer in models.discriminator.layers:
         layer.trainable = False
@@ -125,7 +108,7 @@ def run(args, data):
                                   wasserstein_loss,
                                   partial_gp_loss])
                                   
-    positive_y = np.ones((args.batch_size, 1), dtype=np.float32)
+    positive_y = -np.ones((args.batch_size, 1), dtype=np.float32)
     negative_y = -positive_y
     dummy_y = np.zeros((args.batch_size, 1), dtype=np.float32)
     
