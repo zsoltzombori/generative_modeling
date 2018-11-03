@@ -129,6 +129,7 @@ def run(args, data):
     negative_y = -positive_y
     dummy_y = np.zeros((args.batch_size, 1), dtype=np.float32)
     
+    sampler = samplers.sampler_factory(args)
     
     for step in range(args.training_steps):
         # ---------------------
