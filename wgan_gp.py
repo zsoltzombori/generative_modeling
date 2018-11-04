@@ -27,20 +27,22 @@ class RandomWeightedAverage(_Merge):
 def wasserstein_loss(y_true, y_pred):
     return K.mean(y_true * y_pred)
 
-def gradient_penalty_loss(y_true, y_pred, averaged_samples, gradient_penalty_weight):
-    
-        gradients = K.gradients(y_pred, averaged_samples)[0]
-        # compute the euclidean norm by squaring ...
-        gradients_sqr = K.square(gradients)
-        #   ... summing over the rows ...
-        gradients_sqr_sum = K.sum(gradients_sqr,
-                                  axis=np.arange(1, len(gradients_sqr.shape)))
-        #   ... and sqrt
-        gradient_l2_norm = K.sqrt(gradients_sqr_sum)
-        # compute lambda * (1 - ||grad||)^2 still for each single sample
-        gradient_penalty = gradient_penalty_weight * K.square(1 - gradient_l2_norm)
-        # return the mean as loss over all the batch samples
-        return K.mean(gradient_penalty)
+def gradient_penalty_loss(y_true, y_pred, averaged_samples):
+    """
+    Computes gradient penalty based on prediction and weighted real / fake samples
+    """
+    gradients = K.gradients(y_pred, averaged_samples)[0]
+    # compute the euclidean norm by squaring ...
+    gradients_sqr = K.square(gradients)
+    #   ... summing over the rows ...
+    gradients_sqr_sum = K.sum(gradients_sqr,
+                              axis=np.arange(1, len(gradients_sqr.shape)))
+    #   ... and sqrt
+    gradient_l2_norm = K.sqrt(gradients_sqr_sum)
+    # compute lambda * (1 - ||grad||)^2 still for each single sample
+    gradient_penalty = K.square(1 - gradient_l2_norm)
+    # return the mean as loss over all the batch samples
+    return K.mean(gradient_penalty)
         
 
 def run(args, data):
@@ -50,72 +52,57 @@ def run(args, data):
 
     # vanilla gan works better if images are scaled to [-1,1]
     # if you change this, make sure that the output of the generator is not a tanh
-    x_train = (x_train * 2) - 1
+    x_train = (x_train.astype(np.float32) - 127.5) / 127.5
+   #x_train = np.expand_dims(x_train, axis=3)
     
     # build the models
     models, loss_features = build_models(args)
-    assert set(("generator", "discriminator")) <= set(models.keys()), models.keys()
+    assert set(("generator", "critic")) <= set(models.keys()), models.keys()
 
     print("Discriminator architecture:")
-    print_model(models.discriminator)
+    print_model(models.critic)
     print("Generator architecture:")
     print_model(models.generator)
-
-    ##### Build GENERATOR: #####
-    for layer in models.discriminator.layers:
-        layer.trainable = False
-    models.discriminator.trainable = False
     
-    generator_input = Input(shape=(100,))
-    generator_layers = models.generator(generator_input)
-    discriminator_layers_for_generator = models.discriminator(generator_layers)
-    generator_model = Model(inputs=[generator_input], outputs=[discriminator_layers_for_generator])
+    optimizer = RMSprop(lr=0.00005)
     
-    generator_model.compile(optimizer=Adam(0.0001, beta_1=0.5, beta_2=0.9), loss=wasserstein_loss)
-    
-    ##### BUILD DISCRIMINATOR #####
-    
-    for layer in models.discriminator.layers:
-        layer.trainable = True
-    for layer in models.generator.layers:
-        layer.trainable = False
-    models.discriminator.trainable = True
+    ## Disc: ##
     models.generator.trainable = False
+    real_img = Input(shape=np.shape(x_train)[1:])
+    z_disc = Input(shape=(args.latent_dim,))
+    fake_img = models.generator(z_disc)
+
+    fake = models.critic(fake_img)
+    valid = models.critic(real_img)
     
-    real_samples = Input(shape=x_train.shape[1:])
-    generator_input_for_discriminator = Input(shape=(100,))
-    generated_samples_for_discriminator = models.generator(generator_input_for_discriminator)
-    discriminator_output_from_generator = models.discriminator(generated_samples_for_discriminator)
-    discriminator_output_from_real_samples = models.discriminator(real_samples)
+    interpolated_img = RandomWeightedAverage()([real_img, fake_img])
+    validity_interpolated = models.critic(interpolated_img)
     
-    averaged_samples = RandomWeightedAverage()([real_samples, generated_samples_for_discriminator])
-    averaged_samples_out = models.discriminator(averaged_samples)
-    
-    GRADIENT_PENALTY_WEIGHT=10
     partial_gp_loss = partial(gradient_penalty_loss,
-                          averaged_samples=averaged_samples,
-                          gradient_penalty_weight=GRADIENT_PENALTY_WEIGHT)
-    partial_gp_loss.__name__ = 'gradient_penalty'
+                      averaged_samples=interpolated_img)
+    partial_gp_loss.__name__ = 'gradient_penalty' # Keras requires function names
+
+    critic_model = Model(inputs=[real_img, z_disc],
+                        outputs=[valid, fake, validity_interpolated])
+    critic_model.compile(loss=[wasserstein_loss,
+                                    wasserstein_loss,
+                                    partial_gp_loss],
+                                    optimizer=optimizer,
+                                    loss_weights=[1, 1, 10])
+                                    
+    ## Generator ##
+    models.critic.trainable = False
+    models.generator.trainable = True
     
-    
-    
-    discriminator_model = Model(inputs=[real_samples, generator_input_for_discriminator],
-                            outputs=[discriminator_output_from_real_samples,
-                                     discriminator_output_from_generator,
-                                     averaged_samples_out])
-    discriminator_model.compile(optimizer=Adam(0.0001, beta_1=0.5, beta_2=0.9),
-                            loss=[wasserstein_loss,
-                                  wasserstein_loss,
-                                  partial_gp_loss])
-                          
-    print("Discriminator architecture:")
-    print_model(discriminator_model)
-    print("Generator architecture:")
-    print_model(generator_model)
-    
-    positive_y = -np.ones((args.batch_size, 1), dtype=np.float32)
-    negative_y = -positive_y
-    dummy_y = np.zeros((args.batch_size, 1), dtype=np.float32)
+    z_gen = Input(shape=(100,))
+    img = models.generator(z_gen)
+    valid = models.critic(img)
+    generator_model = Model(z_gen, valid)
+    generator_model.compile(loss=wasserstein_loss, optimizer=optimizer)
+
+    valid = -np.ones((args.batch_size, 1))
+    fake =  np.ones((args.batch_size, 1))
+    dummy = np.zeros((args.batch_size, 1))
     
     sampler = samplers.sampler_factory(args)
     
@@ -130,10 +117,11 @@ def run(args, data):
             idx = np.random.randint(0, x_train.shape[0], args.batch_size)
             imgs = x_train[idx]
 
-            noise = np.random.rand(BATCH_SIZE, 100).astype(np.float32)
-
-            d_loss = discriminator_model.train_on_batch([imgs, noise],[positive_y, negative_y, dummy_y])
-                  
+            noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
+            
+            d_loss = critic_model.train_on_batch([imgs, noise],
+                                                                [valid, fake, dummy])
+            
         #models.discriminator.trainable=False;
         # ---------------------
         #  Train Generator
@@ -146,7 +134,7 @@ def run(args, data):
 
         # Plot the progress
         if (step+1) % args.frequency == 0:
-            print ("%d [D loss: %f %f %f, acc.: %.2f%%] [G loss: %f]" % (step+1, d_loss[0],d_loss[1],d_loss[2], 100*d_loss[3], g_loss))
+            print ("%d [D loss: %f , acc.: %.2f%%] [G loss: %f]" % (step+1, d_loss[0], 100*d_loss[1], g_loss))
             vis.displayRandom((10, 10), args, models, sampler, "{}/random-{}".format(args.outdir, step+1))
 
 
@@ -160,17 +148,14 @@ def run(args, data):
 def build_models(args):
     loss_features = AttrDict({})
             
-    discriminator=networks.version1_for_wgan.build_discriminator((28,28,1));
+    critic=networks.version1_for_wgan.build_discriminator((28,28,1));
 
     generator_input_shape = (args.latent_dim, )
     generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
     #generator=networks.version1_for_wgan.Improved_WGAN_paper_MNIST.build_generator(args.latent_dim,args.linear,False);
 
-    #gen_disc = Sequential([generator, discriminator])
-
     modelDict = AttrDict({})
-    #modelDict.gen_disc = gen_disc
-    modelDict.discriminator = discriminator
+    modelDict.critic= critic
     modelDict.generator = generator
 
     return modelDict, loss_features
