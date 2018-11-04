@@ -107,7 +107,12 @@ def run(args, data):
                             loss=[wasserstein_loss,
                                   wasserstein_loss,
                                   partial_gp_loss])
-                                  
+                          
+    print("Discriminator architecture:")
+    print_model(discriminator_mode)
+    print("Generator architecture:")
+    print_model(generator_model)
+    
     positive_y = np.ones((args.batch_size, 1), dtype=np.float32)
     negative_y = -positive_y
     dummy_y = np.zeros((args.batch_size, 1), dtype=np.float32)
@@ -119,7 +124,7 @@ def run(args, data):
         #  Train Discriminator
         # ---------------------
 
-        models.discriminator.trainable=True
+        #models.discriminator.trainable=True
         for i in range(args.gan_discriminator_update):
             # Select a random batch of images
             idx = np.random.randint(0, x_train.shape[0], args.batch_size)
@@ -129,7 +134,7 @@ def run(args, data):
 
             d_loss = discriminator_model.train_on_batch([imgs, noise],[positive_y, negative_y, dummy_y])
                   
-        models.discriminator.trainable=False;
+        #models.discriminator.trainable=False;
         # ---------------------
         #  Train Generator
         # ---------------------
