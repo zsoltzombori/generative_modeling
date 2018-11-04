@@ -98,6 +98,7 @@ def build_generator(latent_dim,linear=False,batch_norm=True):
 	for layer in model.layers:
 		l=layer(l)
 	out=l
+	m=Model(inp,out)
 	return m
 	
 def build_discriminator(input_shape):
