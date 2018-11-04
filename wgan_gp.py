@@ -14,6 +14,8 @@ import vis
 import samplers
 import util
 
+from keras.datasets import mnist
+
 
 import networks.dense
 import networks.version1_for_wgan
@@ -52,8 +54,9 @@ def run(args, data):
 
     # vanilla gan works better if images are scaled to [-1,1]
     # if you change this, make sure that the output of the generator is not a tanh
+    (x_train, _), (_, _) = mnist.load_data()
     x_train = (x_train.astype(np.float32) - 127.5) / 127.5
-   #x_train = np.expand_dims(x_train, axis=3)
+    x_train = np.expand_dims(x_train, axis=3)
     
     # build the models
     models, loss_features = build_models(args)
