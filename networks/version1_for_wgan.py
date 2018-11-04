@@ -1,9 +1,9 @@
 import numpy as np
-from keras.layers import Dense, Input, Activation, BatchNormalization, Flatten, Reshape, ReLU
+from keras.layers import Dense, Input, Activation, BatchNormalization, Flatten, Reshape
 from keras.regularizers import l1, l2
 from keras.models import Model,Sequential
 from keras.layers import Input, Dense, Lambda, Reshape, Conv2D, MaxPooling2D,Flatten
-from keras.layers import BatchNormalization, Dropout,ZeroPadding2D,Conv2DTranspose,Convolution2D
+from keras.layers import BatchNormalization, Dropout,ZeroPadding2D,Conv2DTranspose,Convolution2D,UpSampling2D
 from keras import backend as K
 from keras import objectives
 from keras.layers.advanced_activations import LeakyReLU
@@ -48,7 +48,7 @@ class Improved_WGAN_paper_MNIST:
 			model.add(BatchNormalization())
 		model.add(Activation('sigmoid'))
 		
-		model.add(Reshape((-1,28,28,1)))
+		#model.add(Reshape((-1,28,28,1)))
 		
 
 
@@ -72,7 +72,7 @@ def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_ac
 def build_generator(latent_dim,linear=False,batch_norm=True):
 	model = Sequential()
 
-	model.add(Dense(128 * 7 * 7, activation="relu", input_dim=self.latent_dim))
+	model.add(Dense(128 * 7 * 7, activation="relu", input_dim=latent_dim))
 	model.add(Reshape((7, 7, 128)))
 	model.add(UpSampling2D())
 	model.add(Conv2D(128, kernel_size=4, padding="same"))
@@ -82,12 +82,12 @@ def build_generator(latent_dim,linear=False,batch_norm=True):
 	model.add(Conv2D(64, kernel_size=4, padding="same"))
 	model.add(BatchNormalization(momentum=0.8))
 	model.add(Activation("relu"))
-	model.add(Conv2D(self.channels, kernel_size=4, padding="same"))
+	model.add(Conv2D(1, kernel_size=4, padding="same"))
 	model.add(Activation("tanh"))
 
 	model.summary()
 
-	noise = Input(shape=(self.latent_dim,))
+	noise = Input(shape=(latent_dim,))
 	img = model(noise)
 
 	return Model(noise, img)
@@ -95,7 +95,7 @@ def build_generator(latent_dim,linear=False,batch_norm=True):
 def build_discriminator(input_shape):
 	model = Sequential()
 	
-	model.add(Conv2D(16, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
+	model.add(Conv2D(16, kernel_size=3, strides=2, input_shape=input_shape, padding="same"))
 	model.add(LeakyReLU(alpha=0.2))
 	model.add(Dropout(0.25))
 	model.add(Conv2D(32, kernel_size=3, strides=2, padding="same"))
@@ -116,7 +116,7 @@ def build_discriminator(input_shape):
 
 	model.summary()
 
-	img = Input(shape=self.img_shape)
+	img = Input(shape=input_shape)
 	validity = model(img)
 
 	return Model(img, validity)

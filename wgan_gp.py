@@ -163,8 +163,8 @@ def build_models(args):
     discriminator=networks.version1_for_wgan.build_discriminator((28,28,1));
 
     generator_input_shape = (args.latent_dim, )
-    #generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
-    generator=networks.version1_for_wgan.Improved_WGAN_paper_MNIST.build_generator(args.latent_dim,args.linear,False);
+    generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
+    #generator=networks.version1_for_wgan.Improved_WGAN_paper_MNIST.build_generator(args.latent_dim,args.linear,False);
 
     #gen_disc = Sequential([generator, discriminator])
 
