@@ -113,7 +113,7 @@ def run(args, data):
     print("Generator architecture:")
     print_model(generator_model)
     
-    positive_y = np.ones((args.batch_size, 1), dtype=np.float32)
+    positive_y = -np.ones((args.batch_size, 1), dtype=np.float32)
     negative_y = -positive_y
     dummy_y = np.zeros((args.batch_size, 1), dtype=np.float32)
     
@@ -146,7 +146,7 @@ def run(args, data):
 
         # Plot the progress
         if (step+1) % args.frequency == 0:
-            print ("%d [D loss: %f %f %f, acc.: %.2f%%] [G loss: %f]" % (step+1, d_loss[0],d_loss[1],d_loss[2], 100*d_loss[4], g_loss))
+            print ("%d [D loss: %f %f %f, acc.: %.2f%%] [G loss: %f]" % (step+1, d_loss[0],d_loss[1],d_loss[2], 100*d_loss[3], g_loss))
             vis.displayRandom((10, 10), args, models, sampler, "{}/random-{}".format(args.outdir, step+1))
 
 
