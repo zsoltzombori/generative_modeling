@@ -139,7 +139,7 @@ def run(args, data):
         #  Train Generator
         # ---------------------
         for i in range(args.gan_generator_update):
-            noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
+            #noise = np.random.normal(0, 1, (args.batch_size, args.latent_dim))
             # Train the generator (to have the discriminator label samples as valid)
             g_loss = generator_model.train_on_batch(noise, positive_y)
 
