@@ -18,13 +18,14 @@ from keras.datasets import mnist
 
 
 import networks.dense
-import networks.version1_for_wgan
-
-BATCH_SIZE=64
+import networks.models
 
 class RandomWeightedAverage(_Merge):
+    def __init__(self,b_size):
+        _Merge.__init__(self)
+        self.BATCH_SIZE=b_size
     def _merge_function(self, inputs):
-        weights = K.random_uniform((BATCH_SIZE, 1, 1, 1))
+        weights = K.random_uniform((self.BATCH_SIZE, 1, 1, 1))
         return (weights * inputs[0]) + ((1 - weights) * inputs[1])
 def wasserstein_loss(y_true, y_pred):
     return K.mean(y_true * y_pred)
@@ -50,8 +51,6 @@ def gradient_penalty_loss(y_true, y_pred, averaged_samples):
 def run(args, data):
     (x_train, x_test) = data
     
-    BATCH_SIZE=args.batch_size
-
     # vanilla gan works better if images are scaled to [-1,1]
     # if you change this, make sure that the output of the generator is not a tanh
     (x_train, _), (_, _) = mnist.load_data()
@@ -78,7 +77,7 @@ def run(args, data):
     fake = models.critic(fake_img)
     valid = models.critic(real_img)
     
-    interpolated_img = RandomWeightedAverage()([real_img, fake_img])
+    interpolated_img = RandomWeightedAverage(args.batch_size)([real_img, fake_img])
     validity_interpolated = models.critic(interpolated_img)
     
     partial_gp_loss = partial(gradient_penalty_loss,
@@ -150,11 +149,16 @@ def run(args, data):
 
 def build_models(args):
     loss_features = AttrDict({})
-            
-    critic=networks.version1_for_wgan.build_discriminator((28,28,1));
-
-    generator_input_shape = (args.latent_dim, )
-    generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
+    
+    ### Fill missing args: ###
+    args['input_shape']=(28,28,1)
+    wgan_model=networks.models.iWGAN_01(args)
+    critic=wgan_model.build_discriminator()
+    #critic=networks.version1_for_wgan.build_discriminator();
+    
+    generator=wgan_model.build_generator()
+    #generator_input_shape = (args.latent_dim, )
+    #generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
     #generator=networks.version1_for_wgan.Improved_WGAN_paper_MNIST.build_generator(args.latent_dim,args.linear,False);
 
     modelDict = AttrDict({})

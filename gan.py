@@ -14,7 +14,7 @@ import samplers
 import util
 
 import networks.dense
-import networks.version1_for_wgan
+import networks.models
 
 
 def run(args, data):
@@ -137,6 +137,8 @@ def run(args, data):
 
 def build_models(args):
     loss_features = AttrDict({})
+    args[input_shape]=(28,28,1)
+    wgan_model=networks.models.iWAGAN_01(args)
             
     if args.discriminator == "dense":
         discriminator = networks.dense.build_model(args.original_shape,
@@ -148,7 +150,8 @@ def build_models(args):
                                                    "sigmoid")
     elif (args.discriminator== "wgan_disc"):
         print("===============wgan disc=============="); 
-        discriminator=networks.version1_for_wgan.build_discriminator((28,28,1));
+        
+        discriminator=wgan_model.build_discriminator();
     else:
         assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
 
@@ -163,7 +166,7 @@ def build_models(args):
                                                "tanh")
     elif (args.generator== "wgan_gen"):
         print("===============wgan gen=============="); 
-        generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear);
+        generator=wgan_model.build_generator();
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
