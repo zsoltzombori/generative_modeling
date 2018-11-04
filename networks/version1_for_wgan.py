@@ -93,9 +93,11 @@ def build_generator(latent_dim,linear=False,batch_norm=True):
 	model.add(Convolution2D(1, (5, 5), padding='same', activation='sigmoid'))
 	#model.add(Dense(784,activation='linear'))
 	
-	inp=Input(shape=(latent_dim,))
-	out=model(inp)
-	m=Model(inp,out)
+	inp=Input(shape=(self.latent_dim,))
+	l=inp
+	for layer in model.layers:
+		l=layer(l)
+	out=l
 	return m
 	
 def build_discriminator(input_shape):
@@ -114,7 +116,10 @@ def build_discriminator(input_shape):
 	model.add(LeakyReLU())
 	model.add(Dense(1, kernel_initializer='he_normal'))
 
-	img = Input(shape=input_shape)
-	validity = model(img)
+	img = Input(shape=self.img_shape)
+	l=img
+	for layer in model.layers:
+		l=layer(l)
+	validity = l
 	m=Model(img, validity)
 	return m
