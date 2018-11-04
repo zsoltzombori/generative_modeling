@@ -1,5 +1,5 @@
 import numpy as np
-from keras.layers import Dense, Input, Activation, BatchNormalization, Flatten, Reshape
+from keras.layers import Dense, Input, Activation, BatchNormalization, Flatten, Reshape, ReLU
 from keras.regularizers import l1, l2
 from keras.models import Model,Sequential
 from keras.layers import Input, Dense, Lambda, Reshape, Conv2D, MaxPooling2D,Flatten
@@ -14,30 +14,42 @@ import networks.net_blocks
 
 class Improved_WGAN_paper_MNIST:
 	def build_generator(latent_dim,batch_norm=False,imp_dim=784):
-		DIM=inp_dim
+		DIM=64
 		model = Sequential()
 		
+		# Dense:
 		model.add(Dense(4*4*4*DIM,input_dim=latent_dim))
+		
+		# Reshape for Convolutional:
+		if K.image_data_format() == 'channels_first':
+			model.add(Reshape((4*DIM, 4, 4), input_shape=(4*4*4*DIM,)))
+			bn_axis = 1
+		else:
+			model.add(Reshape((4, 4, 4*DIM), input_shape=(4*4*4*DIM,)))
+			bn_axis = -1
+		
+		# First Convolutional:
+		model.add(Conv2DTranspose(2*DIM, (5, 5), strides=2))
 		if(batch_norm):
 			model.add(BatchNormalization())
-		model.add(ReLu())
-		model.add(Reshape((4*DIM,4,4)))
+		model.add(Activation('relu'))
 		
-		model.add(Conv2DTranspose(64, (5, 5), strides=2))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		## Reshape???
+		
+		# Second Convolutional:
+		model.add(Conv2DTranspose(DIM, (5, 5), strides=2))
+		if(batch_norm):
+			model.add(BatchNormalization())
+		model.add(Activation('relu'))
+		
+		# Third Convolutional:
+		model.add(Conv2DTranspose(1, (5, 5), strides=2))
+		if(batch_norm):
+			model.add(BatchNormalization())
+		model.add(Activation('sigmoid'))
+		
+		model.add(Reshape((-1,28,28,1)))
+		
 
 
 def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_activation):
@@ -59,68 +71,52 @@ def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_ac
     
 def build_generator(latent_dim,linear=False,batch_norm=True):
 	model = Sequential()
-	model.add(Dense(1024, input_dim=100))
-	model.add(LeakyReLU())
-	model.add(Dense(128 * 7 * 7))
-	if(batch_norm):
-		model.add(BatchNormalization())
-	model.add(LeakyReLU())
-	if K.image_data_format() == 'channels_first':
-		model.add(Reshape((128, 7, 7), input_shape=(128 * 7 * 7,)))
-		bn_axis = 1
-	else:
-		model.add(Reshape((7, 7, 128), input_shape=(128 * 7 * 7,)))
-		bn_axis = -1
-	model.add(Conv2DTranspose(128, (5, 5), strides=2, padding='same'))
-	if(batch_norm):
-		model.add(BatchNormalization(axis=bn_axis))
-	model.add(LeakyReLU())
-	model.add(Convolution2D(64, (5, 5), padding='same'))
-	if(batch_norm):
-		model.add(BatchNormalization(axis=bn_axis))
-	model.add(LeakyReLU())
-	model.add(Conv2DTranspose(64, (5, 5), strides=2, padding='same'))
-	if(batch_norm):
-		model.add(BatchNormalization(axis=bn_axis))
-	model.add(LeakyReLU())
-	# Because we normalized training inputs to lie in the range [-1, 1],
-	# the tanh function should be used for the output of the generator to ensure its output
-	# also lies in this range.
-	#if(linear):
-	#	model.add(Convolution2D(1, (5, 5), padding='same', activation='linear'))
-	#else:
-	#	model.add(Convolution2D(1, (5, 5), padding='same', activation='tanh'))
-	model.add(Convolution2D(1, (5, 5), padding='same', activation='sigmoid'))
-	#model.add(Dense(784,activation='linear'))
-	
-	inp=Input(shape=(latent_dim,))
-	l=inp
-	for layer in model.layers:
-		l=layer(l)
-	out=l
-	m=Model(inp,out)
-	return m
+
+	model.add(Dense(128 * 7 * 7, activation="relu", input_dim=self.latent_dim))
+	model.add(Reshape((7, 7, 128)))
+	model.add(UpSampling2D())
+	model.add(Conv2D(128, kernel_size=4, padding="same"))
+	model.add(BatchNormalization(momentum=0.8))
+	model.add(Activation("relu"))
+	model.add(UpSampling2D())
+	model.add(Conv2D(64, kernel_size=4, padding="same"))
+	model.add(BatchNormalization(momentum=0.8))
+	model.add(Activation("relu"))
+	model.add(Conv2D(self.channels, kernel_size=4, padding="same"))
+	model.add(Activation("tanh"))
+
+	model.summary()
+
+	noise = Input(shape=(self.latent_dim,))
+	img = model(noise)
+
+	return Model(noise, img)
 	
 def build_discriminator(input_shape):
 	model = Sequential()
-	if K.image_data_format() == 'channels_first':
-		model.add(Conv2D(64, (5, 5), padding='same', input_shape=(1, 28, 28)))
-	else:
-		model.add(Conv2D(64, (5, 5), padding='same', input_shape=(28, 28, 1)))
-	model.add(LeakyReLU())
-	model.add(Conv2D(128, (5, 5), kernel_initializer='he_normal', strides=[2, 2]))
-	model.add(LeakyReLU())
-	model.add(Conv2D(128, (5, 5), kernel_initializer='he_normal', padding='same', strides=[2, 2]))
-	model.add(LeakyReLU())
+	
+	model.add(Conv2D(16, kernel_size=3, strides=2, input_shape=self.img_shape, padding="same"))
+	model.add(LeakyReLU(alpha=0.2))
+	model.add(Dropout(0.25))
+	model.add(Conv2D(32, kernel_size=3, strides=2, padding="same"))
+	model.add(ZeroPadding2D(padding=((0,1),(0,1))))
+	model.add(BatchNormalization(momentum=0.8))
+	model.add(LeakyReLU(alpha=0.2))
+	model.add(Dropout(0.25))
+	model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
+	model.add(BatchNormalization(momentum=0.8))
+	model.add(LeakyReLU(alpha=0.2))
+	model.add(Dropout(0.25))
+	model.add(Conv2D(128, kernel_size=3, strides=1, padding="same"))
+	model.add(BatchNormalization(momentum=0.8))
+	model.add(LeakyReLU(alpha=0.2))
+	model.add(Dropout(0.25))
 	model.add(Flatten())
-	model.add(Dense(1024, kernel_initializer='he_normal'))
-	model.add(LeakyReLU())
-	model.add(Dense(1, kernel_initializer='he_normal'))
+	model.add(Dense(1))
 
-	img = Input(shape=input_shape)
-	l=img
-	for layer in model.layers:
-		l=layer(l)
-	validity = l
-	m=Model(img, validity)
-	return m
+	model.summary()
+
+	img = Input(shape=self.img_shape)
+	validity = model(img)
+
+	return Model(img, validity)

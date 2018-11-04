@@ -54,7 +54,7 @@ def run(args, data):
     
     # build the models
     models, loss_features = build_models(args)
-    assert set(("generator", "discriminator", "gen_disc")) <= set(models.keys()), models.keys()
+    assert set(("generator", "discriminator")) <= set(models.keys()), models.keys()
 
     print("Discriminator architecture:")
     print_model(models.discriminator)
@@ -146,7 +146,7 @@ def run(args, data):
 
         # Plot the progress
         if (step+1) % args.frequency == 0:
-            print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (step+1, d_loss[0], 100*d_loss[1], g_loss))
+            print ("%d [D loss: %f %f %f, acc.: %.2f%%] [G loss: %f]" % (step+1, d_loss[0],d_loss[1],d_loss[2], 100*d_loss[4], g_loss))
             vis.displayRandom((10, 10), args, models, sampler, "{}/random-{}".format(args.outdir, step+1))
 
 
@@ -160,39 +160,16 @@ def run(args, data):
 def build_models(args):
     loss_features = AttrDict({})
             
-    if args.discriminator == "dense":
-        discriminator = networks.dense.build_model(args.original_shape,
-                                                   [1],
-                                                   args.discriminator_dims,
-                                                   args.discriminator_wd,
-                                                   args.discriminator_use_bn,
-                                                   args.activation,
-                                                   "sigmoid")
-    elif (args.discriminator== "wgan_disc"):
-        print("===============wgan disc=============="); 
-        discriminator=networks.version1_for_wgan.build_discriminator((28,28,1));
-    else:
-        assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
+    discriminator=networks.version1_for_wgan.build_discriminator((28,28,1));
 
     generator_input_shape = (args.latent_dim, )
-    if args.generator == "dense":
-        generator = networks.dense.build_model(generator_input_shape,
-                                               args.original_shape,
-                                               args.generator_dims,
-                                               args.generator_wd,
-                                               args.generator_use_bn,
-                                               args.activation,
-                                               "tanh")
-    elif (args.generator== "wgan_gen"):
-        print("===============wgan gen=============="); 
-        generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
-    else:
-        assert False, "Unrecognized value for generator: {}".format(args.generator)
+    #generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
+    generator=networks.version1_for_wgan.Improved_WGAN_paper_MNIST.build_generator(args.latent_dim,args.linear,False);
 
-    gen_disc = Sequential([generator, discriminator])
+    #gen_disc = Sequential([generator, discriminator])
 
     modelDict = AttrDict({})
-    modelDict.gen_disc = gen_disc
+    #modelDict.gen_disc = gen_disc
     modelDict.discriminator = discriminator
     modelDict.generator = generator
 
