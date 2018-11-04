@@ -54,6 +54,7 @@ def run(args, data):
     # vanilla gan works better if images are scaled to [-1,1]
     # if you change this, make sure that the output of the generator is not a tanh
     (x_train, _), (_, _) = mnist.load_data()
+    #x_train=x_train.reshape((-1,784,1))
     x_train = (x_train.astype(np.float32) - 127.5) / 127.5
     x_train = np.expand_dims(x_train, axis=3)
     
@@ -154,12 +155,8 @@ def build_models(args):
     args['input_shape']=(28,28,1)
     wgan_model=networks.models.iWGAN_01(args)
     critic=wgan_model.build_discriminator()
-    #critic=networks.version1_for_wgan.build_discriminator();
-    
+
     generator=wgan_model.build_generator()
-    #generator_input_shape = (args.latent_dim, )
-    #generator=networks.version1_for_wgan.build_generator(args.latent_dim,args.linear,False);
-    #generator=networks.version1_for_wgan.Improved_WGAN_paper_MNIST.build_generator(args.latent_dim,args.linear,False);
 
     modelDict = AttrDict({})
     modelDict.critic= critic
