@@ -109,7 +109,7 @@ def run(args, data):
                                   partial_gp_loss])
                           
     print("Discriminator architecture:")
-    print_model(discriminator_mode)
+    print_model(discriminator_model)
     print("Generator architecture:")
     print_model(generator_model)
     
