@@ -54,7 +54,7 @@ def get_cars():
 
     x_train=[]
 
-    dir="../cars_28/"
+    dir="./datasets/cars_28/"
     os.chdir(dir)
     for filename in glob.glob("*.jpg"):
         img=mpimg.imread(filename)
