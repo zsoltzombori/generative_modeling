@@ -57,7 +57,7 @@ def run(args, data):
     #x_train=x_train.reshape((-1,784,1))
     x_train = (x_train.astype(np.float32) - 127.5) / 127.5
     x_train = np.expand_dims(x_train, axis=3)
-    args['input_shape']=np.shape(x_train)
+    args['input_shape']=np.shape(x_train)[1:]
     print(np.shape(x_train))
     
     # build the models
