@@ -69,7 +69,7 @@ def get_cars():
     cwd = os.getcwd()
     print(cwd)
 
-    #x_train = np.array(x_train).astype('float32') / 255.
+    x_train = np.array(x_train).astype('float32')
     print("Train:",np.shape(x_train))
     return x_train
     
