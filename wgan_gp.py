@@ -77,7 +77,6 @@ def run(args, data):
     #(x_train, x_test) = data
     
     #(x_train, _), (_, _) = mnist.load_data()
-    #x_train=x_train.reshape((-1,784,1))
     x_train=get_cars()
     x_train = (x_train.astype(np.float32) - 127.5) / 127.5
     #x_train = np.expand_dims(x_train, axis=3)
@@ -93,7 +92,8 @@ def run(args, data):
     print("Generator architecture:")
     print_model(models.generator)
     
-    optimizer = RMSprop(lr=0.00005)
+    #optimizer = RMSprop(lr=0.00005)
+    optimizer = Adam(lr=1e-4,beta_1=0., beta_2=0.9)
     
     ## Disc: ##
     models.generator.trainable = False
