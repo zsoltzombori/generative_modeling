@@ -53,7 +53,10 @@ def get_cars():
     import matplotlib.image as mpimg
 
     x_train=[]
-
+    
+    cwd = os.getcwd()
+    print(cwd)
+    
     dir="./datasets/cars_28/"
     os.chdir(dir)
     for filename in glob.glob("*.jpg"):
@@ -61,7 +64,10 @@ def get_cars():
         img=np.resize(img,(28,28,1))
         
         x_train.append(img)
-    os.chdir("../")
+    os.chdir("../../")
+    
+    cwd = os.getcwd()
+    print(cwd)
 
     x_train = np.array(x_train).astype('float32') / 255.
     print("Train:",np.shape(x_train))
