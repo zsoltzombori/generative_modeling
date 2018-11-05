@@ -154,7 +154,7 @@ def build_models(args):
     loss_features = AttrDict({})
     
     ### Fill missing args: ###
-    args['input_shape']=np.shape(x_train)[1:]
+    args['input_shape']=np.shape(x_train)
     wgan_model=networks.models.iWGAN_01(args)
     critic=wgan_model.build_discriminator()
 
