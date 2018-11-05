@@ -180,7 +180,7 @@ def build_models(args):
     ### Fill missing args: ###
     
     wgan_model=networks.models.iWGAN_01(args)
-    critic=wgan_model.build_discriminator(True)
+    critic=wgan_model.build_discriminator(False)
 
     generator=wgan_model.build_generator(True)
 
