@@ -49,10 +49,8 @@ def gradient_penalty_loss(y_true, y_pred, averaged_samples):
         
 
 def run(args, data):
-    (x_train, x_test) = data
+    #(x_train, x_test) = data
     
-    # vanilla gan works better if images are scaled to [-1,1]
-    # if you change this, make sure that the output of the generator is not a tanh
     (x_train, _), (_, _) = mnist.load_data()
     #x_train=x_train.reshape((-1,784,1))
     x_train = (x_train.astype(np.float32) - 127.5) / 127.5
@@ -156,9 +154,9 @@ def build_models(args):
     ### Fill missing args: ###
     
     wgan_model=networks.models.iWGAN_01(args)
-    critic=wgan_model.build_discriminator()
+    critic=wgan_model.build_discriminator(True)
 
-    generator=wgan_model.build_generator()
+    generator=wgan_model.build_generator(True)
 
     modelDict = AttrDict({})
     modelDict.critic= critic
