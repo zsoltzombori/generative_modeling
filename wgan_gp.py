@@ -58,6 +58,8 @@ def run(args, data):
     x_train = (x_train.astype(np.float32) - 127.5) / 127.5
     x_train = np.expand_dims(x_train, axis=3)
     
+    print(np.shape(x_train))
+    
     # build the models
     models, loss_features = build_models(args)
     assert set(("generator", "critic")) <= set(models.keys()), models.keys()
@@ -152,7 +154,7 @@ def build_models(args):
     loss_features = AttrDict({})
     
     ### Fill missing args: ###
-    args['input_shape']=(28,28,1)
+    args['input_shape']=np.shape(x_train)[1:]
     wgan_model=networks.models.iWGAN_01(args)
     critic=wgan_model.build_discriminator()
 
