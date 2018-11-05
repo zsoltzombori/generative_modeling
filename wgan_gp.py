@@ -47,14 +47,34 @@ def gradient_penalty_loss(y_true, y_pred, averaged_samples):
     # return the mean as loss over all the batch samples
     return K.mean(gradient_penalty)
         
+def get_cars():
+    import random
+    import glob, os
+    import matplotlib.image as mpimg
 
+    x_train=[]
+
+    dir="../cars_28/"
+    os.chdir(dir)
+    for filename in glob.glob("*.jpg"):
+        img=mpimg.imread(filename)
+        img=np.resize(img,(28,28,1))
+        
+        x_train.append(img)
+    os.chdir("../")
+
+    x_train = np.array(x_train).astype('float32') / 255.
+    print("Train:",np.shape(x_train))
+    return x_train
+    
 def run(args, data):
     #(x_train, x_test) = data
     
-    (x_train, _), (_, _) = mnist.load_data()
+    #(x_train, _), (_, _) = mnist.load_data()
     #x_train=x_train.reshape((-1,784,1))
+    x_train=get_cars()
     x_train = (x_train.astype(np.float32) - 127.5) / 127.5
-    x_train = np.expand_dims(x_train, axis=3)
+    #x_train = np.expand_dims(x_train, axis=3)
     args['input_shape']=np.shape(x_train)[1:]
     print(np.shape(x_train))
     
