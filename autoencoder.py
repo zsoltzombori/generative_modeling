@@ -11,7 +11,7 @@ import vis
 import samplers
 import callbacks
 
-import networks.dense
+from networks import dense, conv
 
 
 def run(args, data):
@@ -89,25 +89,29 @@ def build_models(args):
         encoder_output_shape = (args.latent_dim, )
         
     if args.encoder == "dense":
-        encoder = networks.dense.build_model(args.original_shape,
-                                             encoder_output_shape,
-                                             args.encoder_dims,
-                                             args.encoder_wd,
-                                             args.encoder_use_bn,
-                                             args.activation,
-                                             "linear")
+        encoder = dense.build_model(args.original_shape,
+                                    encoder_output_shape,
+                                    args.encoder_dims,
+                                    args.encoder_wd,
+                                    args.encoder_use_bn,
+                                    args.activation,
+                                    "linear")
+    elif args.encoder == "conv":
+        encoder = conv.build_model(args.original_shape, encoder_output_shape, args.encoder_conv_channels, args.encoder_wd, args.encoder_use_bn, args.activation, "linear")
     else:
         assert False, "Unrecognized value for encoder: {}".format(args.encoder)
 
     generator_input_shape = (args.latent_dim, )
     if args.generator == "dense":
-        generator = networks.dense.build_model(generator_input_shape,
-                                               args.original_shape,
-                                               args.generator_dims,
-                                               args.generator_wd,
-                                               args.generator_use_bn,
-                                               args.activation,
-                                               "linear")
+        generator = dense.build_model(generator_input_shape,
+                                      args.original_shape,
+                                      args.generator_dims,
+                                      args.generator_wd,
+                                      args.generator_use_bn,
+                                      args.activation,
+                                      "linear")
+    elif args.generator == "conv":
+        generator = conv.build_model(generator_input_shape, args.original_shape, args.generator_conv_channels, args.generator_wd, args.generator_use_bn, args.activation, "linear")
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
