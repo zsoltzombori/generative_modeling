@@ -74,12 +74,12 @@ def get_cars():
     return x_train
     
 def run(args, data):
-    #(x_train, x_test) = data
+    (x_train, x_test) = data
     
-    #(x_train, _), (_, _) = mnist.load_data()
-    x_train=get_cars()
+    (x_train, _), (_, _) = mnist.load_data()
+    #x_train=get_cars()
     x_train = (x_train.astype(np.float32) - 127.5) / 127.5
-    #x_train = np.expand_dims(x_train, axis=3)
+    x_train = np.expand_dims(x_train, axis=3)
     args['input_shape']=np.shape(x_train)[1:]
     print(np.shape(x_train))
     

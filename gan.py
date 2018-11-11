@@ -39,7 +39,7 @@ def run(args, data):
     if args.optimizer == "rmsprop":
         optimizer = RMSprop(lr=args.lr)
     elif args.optimizer == "adam":
-        optimizer = Adam(lr=args.lr)
+        optimizer = Adam(lr=args.lr,beta_1=0., beta_2=0.9)
     elif args.optimizer == "sgd":
         optimizer = SGD(lr = args.lr, clipvalue=1.0)
     else:
