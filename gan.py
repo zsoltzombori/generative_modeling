@@ -15,6 +15,7 @@ import util
 
 import networks.dense
 import networks.models
+from keras.datasets import mnist
 
 
 def run(args, data):
