@@ -151,7 +151,7 @@ def build_models(args):
     elif (args.discriminator== "wgan_disc"):
         print("===============wgan disc=============="); 
         
-        discriminator=wgan_model.build_discriminator(args.generator_use_bn);
+        discriminator=wgan_model.build_discriminator(args.discriminator_use_bn);
     else:
         assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
 
