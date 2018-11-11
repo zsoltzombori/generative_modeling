@@ -23,6 +23,7 @@ def run(args, data):
     # vanilla gan works better if images are scaled to [-1,1]
     # if you change this, make sure that the output of the generator is not a tanh
     x_train = (x_train * 2) - 1
+    args['input_shape']=np.shape(x_train)[1:]
     
     models, loss_features = build_models(args)
     assert set(("generator", "discriminator", "gen_disc")) <= set(models.keys()), models.keys()
