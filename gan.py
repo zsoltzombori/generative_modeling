@@ -151,7 +151,7 @@ def build_models(args):
     elif (args.discriminator== "wgan_disc"):
         print("===============wgan disc=============="); 
         
-        discriminator=wgan_model.build_discriminator();
+        discriminator=wgan_model.build_discriminator(args.generator_use_bn);
     else:
         assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
 
@@ -166,7 +166,7 @@ def build_models(args):
                                                "tanh")
     elif (args.generator== "wgan_gen"):
         print("===============wgan gen=============="); 
-        generator=wgan_model.build_generator();
+        generator=wgan_model.build_generator(args.generator_use_bn);
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
