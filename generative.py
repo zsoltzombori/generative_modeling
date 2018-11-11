@@ -34,7 +34,7 @@ args.original_size = np.prod(args.original_shape)
 if args.model_type == "autoencoder":
     autoencoder.run(args, (x_train, x_test))
 elif args.model_type in ("wgan-gp"):
-    wgan_gp.run(args, (x_train, x_test))
+    gan.run(args, (x_train, x_test))
 elif args.model_type in ("gan", "wgan"):
     gan.run(args, (x_train, x_test))
 else:
