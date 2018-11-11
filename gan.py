@@ -138,8 +138,7 @@ def run(args, data):
 
 def build_models(args):
     loss_features = AttrDict({})
-    args[input_shape]=(28,28,1)
-    wgan_model=networks.models.iWAGAN_01(args)
+    wgan_model=networks.models.iWGAN_01(args)
             
     if args.discriminator == "dense":
         discriminator = networks.dense.build_model(args.original_shape,
