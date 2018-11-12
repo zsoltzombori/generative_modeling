@@ -24,7 +24,7 @@ def run(args, data):
     # vanilla gan works better if images are scaled to [-1,1]
     # if you change this, make sure that the output of the generator is not a tanh
     x_train = (x_train * 2) - 1
-    dim=int(np.sqrt(np.product(shape)))
+    dim=int(np.sqrt(np.product(args.shape)))
     if(args.model_type=="wgan-gp" or args.model_type=="wgan"):
         x_train=x_train.reshape(len(x_train),dim,dim,1)
     
@@ -91,12 +91,14 @@ def run(args, data):
     print("Generator architecture:")
     print_model(gen_disc)
     
-    
-    # Adversarial ground truths
-    valid_labels = -np.ones((args.batch_size, 1))
-    #fake_labels = np.zeros((args.batch_size, 1))
-    fake_labels = np.ones((args.batch_size, 1))
-    dummy_y= np.zeros((args.batch_size, 1))
+    if(args.model_type=="gan"):
+        valid_labels = np.ones((args.batch_size, 1))
+        fake_labels = np.zeros((args.batch_size, 1))
+    else:
+        # Adversarial ground truths
+        valid_labels = -np.ones((args.batch_size, 1))
+        fake_labels = np.ones((args.batch_size, 1))
+        dummy_y= np.zeros((args.batch_size, 1))
 
     sampler = samplers.sampler_factory(args)
 
