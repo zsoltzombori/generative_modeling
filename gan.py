@@ -24,7 +24,9 @@ def run(args, data):
     # vanilla gan works better if images are scaled to [-1,1]
     # if you change this, make sure that the output of the generator is not a tanh
     x_train = (x_train * 2) - 1
-    #x_train=x_train.reshape(len(x_train),28,28,1)
+    dim=int(np.sqrt(np.product(shape)))
+    if(args.model_type=="wgan-gp" or args.model_type=="wgan"):
+        x_train=x_train.reshape(len(x_train),dim,dim,1)
     
     args['input_shape']=np.shape(x_train)[1:]
     
