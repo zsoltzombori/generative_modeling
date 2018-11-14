@@ -47,7 +47,7 @@ def load(dataset, shape=None, color=True):
     elif dataset == "celeba":
         return Dataset_celeba(shape, color)
     elif dataset == "bedroom":
-        return Dataset_bedroom(shape)    
+        return Dataset_bedroom(shape)
     elif dataset == "syn-circles":
         return Dataset_circles_centered(shape)
     elif dataset == "syn-moving-circles":
@@ -60,6 +60,8 @@ def load(dataset, shape=None, color=True):
         return Dataset_syn_constant_uniform(shape)
     elif dataset == "syn-constant-normal":
         return Dataset_syn_constant_normal(shape)
+    elif dataset == "dsprite":
+        return Dataset_dsprite(shape)
     # elif dataset.startswith("syn-clocks-hand"):
     #     assert shape == (28, 28) and not color
     #     suffix = dataset.split("-", 2)[2]
@@ -70,7 +72,7 @@ def load(dataset, shape=None, color=True):
         raise Exception("Invalid dataset: ", dataset)
 
 def test(file):
-    datasets ["mnist", "celeba", "bedroom", "syn-circles", "syn-moving-circles", "syn-rectangles", "syn-gradient"]
+    datasets ["mnist", "celeba", "bedroom", "syn-circles", "syn-moving-circles", "syn-rectangles", "syn-gradient", "dsprite"]
     shape=(64, 64)
     trainSize = 20
     testSize = 1
@@ -126,7 +128,7 @@ class Dataset(object):
         x_train, x_test = self.get_data(trainSize, 1)
         x_true = x_train.reshape(trainSize, -1)
         x_generated = generated_samples.reshape(generated_samples.shape[0], -1)
-        
+
         f = x_true.shape[1]
         t = annoy.AnnoyIndex(f, metric="euclidean")
         for i, v in enumerate(x_true):
@@ -157,7 +159,7 @@ class Dataset_real(Dataset):
             assert False, "You need to call get_data to instantiate self.x_train"
         return flow_object
     def get_normalized_image_data(self, input, trainSize, testSize):
-        assert trainSize > 0 and testSize > 0, "trainSize and testSize must be positive"            
+        assert trainSize > 0 and testSize > 0, "trainSize and testSize must be positive"
         x_train = input[:trainSize]
         x_test = input[trainSize:trainSize+testSize]
         x_train = x_train.astype('float32') / 255.
@@ -234,7 +236,7 @@ class Dataset_celeba(Dataset_real):
                     if color:
                         img = Image.open(os.path.join(directory, f))
                     else:
-                        img = Image.open(os.path.join(directory, f)).convert("L")                
+                        img = Image.open(os.path.join(directory, f)).convert("L")
                     arr = np.array(img)
                     if height is None:
                         height, width = arr.shape[:2]
@@ -282,7 +284,7 @@ class Dataset_bedroom(Dataset_real):
         if os.path.isfile(cacheFile):
             self.input = np.load(cacheFile)
         else:
-            assert False, "Missing cache file: {}".format(cacheFile)        
+            assert False, "Missing cache file: {}".format(cacheFile)
     def get_data(self, trainSize, testSize):
         self.x_train, self.x_test = self.get_normalized_image_data(self.input, trainSize, testSize)
         return (self.x_train, self.x_test)
@@ -324,7 +326,7 @@ class Dataset_syn_finite(Dataset_synthetic):
         super(Dataset_syn_finite, self).__init__(name, shape=shape, finite=True)
         self.generate_finite_set()
     def get_data(self, trainSize, testSize):
-        assert trainSize > 0 and testSize > 0, "trainSize and testSize must be positive"            
+        assert trainSize > 0 and testSize > 0, "trainSize and testSize must be positive"
         train_indices = np.random.choice(len(self.finite_set), trainSize)
         test_indices = np.random.choice(len(self.finite_set), testSize)
         self.x_train = self.finite_set[train_indices]
@@ -347,7 +349,7 @@ class Dataset_syn_finite(Dataset_synthetic):
     def get_nearest_samples(self, generated_samples):
         x_true = self.finite_set(self.finite_set.shape[0], -1)
         x_generated = generated_samples.reshape(generated_samples.shape[0], -1)
-        
+
         f = x_true.shape[1]
         t = annoy.AnnoyIndex(f, metric="euclidean")
         for i, v in enumerate(x_true):
@@ -378,7 +380,7 @@ class Dataset_circles_centered(Dataset_syn_finite):
         shape = self.shape
         max_radius = min(shape) // 2
 
-        data = np.zeros((max_radius + 1, shape[0], shape[1]))        
+        data = np.zeros((max_radius + 1, shape[0], shape[1]))
         for r in range(max_radius + 1):
             self.generate_one_sample(data[r], r)
         data = np.expand_dims(data, feature_axis)
@@ -432,7 +434,7 @@ class Dataset_syn_infinite(Dataset_synthetic):
         for i, sample in enumerate(samples):
             self.generate_one_sample(data[i], sample)
         data = np.expand_dims(data, feature_axis)
-        return data        
+        return data
     def generate_samples(self, size):
         data = np.zeros((size, self.shape[0], self.shape[1]))
         params = self.sampler(size)
@@ -465,7 +467,7 @@ class Dataset_syn_rectangles(Dataset_syn_infinite):
             for y2 in range(y1+1, size):
                 for x1 in range(size-1):
                     for x2 in range(x1+1, size):
-                        sample = np.array([y1,y2,x1,x2]) * 1.0 / size 
+                        sample = np.array([y1,y2,x1,x2]) * 1.0 / size
                         samples.append(sample)
         samples = np.array(samples)
         return samples
@@ -572,7 +574,7 @@ def resize_images(dataset, sizeX, sizeY, sizeZ, outputFile=None):
         image_resized = scipy.ndimage.zoom(image, zoom=(1.0 * sizeX / image.shape[0], 1.0 * sizeY / image.shape[1], 1.0 * sizeZ / image.shape[2]))
         result.append(image_resized)
     result = np.array(result)
-    if outputFile is not None: 
+    if outputFile is not None:
         np.save(outputFile, result)
     print("done resizing images.")
     return result
@@ -597,3 +599,22 @@ def load_celeba_labels():
     sorter = sorted(list(range(len(fileNames))), key=lambda k: fileNames[k])
     labels = labels[sorter]
     return label_names, labels
+
+class Dataset_dsprite(Dataset_real):
+    def __init__(self, shape=(64,64)):
+        super(Dataset_dsprite, self).__init__("dsprite", shape, color=False)
+
+        if shape==(64, 64):
+            cacheFile = "datasets/reduced.npz"
+        else:
+            assert False, "We don't have a bedroom dataset with size {}".format(shape)
+        if os.path.isfile(cacheFile):
+            self.input = np.load(cacheFile)
+        else:
+            assert False, "Missing cache file: {}".format(cacheFile)
+    def get_data(self, trainSize, testSize):
+        print("Shape")
+        print(self.input['imgs'].shape)
+        expanded_imgs = np.expand_dims(self.input['imgs'], axis=3)
+        self.x_train, self.x_test = self.get_normalized_image_data(expanded_imgs, trainSize, testSize)
+        return (self.x_train, self.x_test)

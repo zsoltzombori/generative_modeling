@@ -223,3 +223,7 @@ class ImageDisplayCallback(Callback):
     
 # #    def on_epoch_end(self, epoch, logs):
 # #        self.saveimg(epoch)
+<<<<<<< HEAD
+=======
+
+>>>>>>> master

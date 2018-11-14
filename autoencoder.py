@@ -5,29 +5,34 @@ from keras.layers import Dense, Activation, Reshape, Input, Lambda, Concatenate,
 from keras import backend as K
 from keras.models import Model
 
-from util import AttrDict, print_model_shapes
+from util import *
 import model_IO
 import loss
 import vis
 import samplers
 import callbacks
 
-import networks.dense
+from networks import dense, conv
 
 
 def run(args, data):
     ((x_train, y_train), (x_test, y_test)) = data
 
+    sampler = samplers.sampler_factory(args)
+
     models, loss_features = build_models(args)
     assert set(("ae", "encoder", "generator")) <= set(models.keys()), models.keys()
 
     print("Encoder architecture:")
-    print_model_shapes(models.encoder)
+    print_model(models.encoder)
     print("Generator architecture:")
-    print_model_shapes(models.generator)
+    print_model(models.generator)
 
     # get losses
-    losses, metrics = loss.loss_factory(args, loss_features)
+    loss_names = sorted(set(args.loss_encoder + args.loss_generator))
+    losses = loss.loss_factory(loss_names, args, loss_features, combine_with_weights=True)
+    metric_names = sorted(set(args.metrics + tuple(loss_names)))
+    metrics = loss.loss_factory(metric_names, args, loss_features, combine_with_weights=False)
 
     sampler = samplers.sampler_factory(args)
 
@@ -62,12 +67,11 @@ def run(args, data):
     model_IO.save_autoencoder(models, args)
 
     # display randomly generated images
-    sampler = samplers.sampler_factory(args)
-    vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
+    # vis.displayRandom((10, 10), args, models, sampler, "{}/random".format(args.outdir))
 
     # display one batch of reconstructed images
-    vis.displayReconstructed(x_train[:args.batch_size], args, models, "{}/train".format(args.outdir))
-    vis.displayReconstructed(x_test[:args.batch_size], args, models, "{}/test".format(args.outdir))
+    # vis.displayReconstructed(x_train[:args.batch_size], args, models, "{}/train".format(args.outdir))
+    # vis.displayReconstructed(x_test[:args.batch_size], args, models, "{}/test".format(args.outdir))
 
 
     # # display image interpolation
@@ -105,9 +109,12 @@ def build_models(args):
                                              args.encoder_use_bn,
                                              args.activation,
                                              "linear")
-        encoder = Model(inputs=[input_x, input_y], outputs=encoder(merge_model([input_x, input_y]))) # Sequential([merge_model, encoder])
+    elif args.encoder == "conv":
+        encoder = conv.build_model((concatenated_input_size, ), encoder_output_shape, args.encoder_conv_channels, args.encoder_wd, args.encoder_use_bn, args.activation, "linear")
+
     else:
         assert False, "Unrecognized value for encoder: {}".format(args.encoder)
+    encoder = Model(inputs=[input_x, input_y], outputs=encoder(merge_model([input_x, input_y]))) # Sequential([merge_model, encoder])
 
     generator_input_shape = (args.latent_dim + args.y_label_count, )
     if args.generator == "dense":
@@ -118,9 +125,11 @@ def build_models(args):
                                                args.generator_use_bn,
                                                args.activation,
                                                "linear")
-        generator = Model(inputs=[input_latent, input_y2], outputs=generator(merge_latent_model([input_latent, input_y2])))
+    elif args.generator == "conv":
+        generator = conv.build_model(generator_input_shape, args.original_shape, args.generator_conv_channels, args.generator_wd, args.generator_use_bn, args.activation, "linear")
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)
+    generator = Model(inputs=[input_latent, input_y2], outputs=generator(merge_latent_model([input_latent, input_y2])))
 
     if args.sampling:
         hidden = encoder([input_x, input_y])

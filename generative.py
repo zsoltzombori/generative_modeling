@@ -6,6 +6,7 @@ import params
 import data
 
 import autoencoder
+import gan
 
 # load parameters
 args = params.getArgs()
@@ -33,5 +34,7 @@ y_test_onehot  = keras.utils.to_categorical(y_test,  num_classes=args.y_label_co
 
 if args.model_type == "autoencoder":
     autoencoder.run(args, ((x_train, y_train_onehot), (x_test, y_test_onehot)))
+elif args.model_type == "gan":
+    gan.run(args, (x_train, x_test))
 else:
     assert False, "Unrecognized model_type: {}".format(args.model_type)
