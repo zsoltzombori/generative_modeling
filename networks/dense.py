@@ -23,8 +23,8 @@ def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_ac
     return model
 
 
-def build_conv_model(input_shape, intermediate_dim, latent_dim,
-                     filters, kernel, wd, use_bn, activation, strides, padding):
+def build_conv_model(input_shape, intermediate_dim, output_shape,
+                     filters, kernel, wd, use_bn, activation, strides, padding, last_activation):
     inputs = Input(shape = input_shape)
     outputs = inputs
 
@@ -36,25 +36,28 @@ def build_conv_model(input_shape, intermediate_dim, latent_dim,
     outputs = Flatten()(outputs)
 
     outputs = Dense(intermediate_dim, activation='relu')(outputs)
-    outputs = Dense(latent_dim)(outputs)
+
+    outputs = Dense(np.prod(output_shape), activation=last_activation)(outputs)
+    outputs = Reshape(output_shape)(outputs)
 
     convmodel = Model(inputs = inputs, outputs = outputs)
 
     return convmodel
 
 
-def build_deconv_model(filters, kernel, wd, use_bn, activation, strides, padding):
+def build_deconv_model(input_shape, output_wh, filters, kernel, wd, use_bn, activation, strides, padding):
 
-    input_dim = build_conv_model().output_shape
+    # input_dim = build_conv_model().output_shape
 
-    inputs = build_conv_model()
+    # inputs = build_conv_model()
+    inputs = Input(shape = input_shape)
     outputs = inputs
 
-    outputs = Dense(input_dim, activation = 'relu')(outputs)
-    outputs = Dense(filters[0] * 28 * 28, activation='relu')(outputs)
-    outputs = Reshape((28, 28, filters[0]))(outputs)
+#    outputs = Dense(input_dim, activation = 'relu')(outputs)
+    outputs = Dense(filters[0] * np.prod(output_wh), activation='relu')(outputs)
+    outputs = Reshape(list(output_wh) + [filters[0]])(outputs)
 
-    layers = networks.net_blocks.deconv_block(filters, kernel, wd, use_bn,
+    layers = networks.net_blocks.deconv_block(filters[1:], kernel, wd, use_bn,
                                             activation, strides, padding)
     for l in layers:
         outputs = l(outputs)

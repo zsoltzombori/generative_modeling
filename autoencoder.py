@@ -97,19 +97,19 @@ def build_models(args):
                                              args.activation,
                                              "linear")
 
-     elif args.encoder == "convolutional":
-        encoder = networks.dense.build_conv_model((args.original_shape,),
+    elif args.encoder == "convolutional":
+        encoder = networks.dense.build_conv_model(args.original_shape,
                                                   args.encoder_intermediate_dim,
-                                                  args.encoder_latent_dim,
+                                                  encoder_output_shape,
                                                   args.encoder_filters,
                                                   args.encoder_kernel,
                                                   args.encoder_wd,
                                                   args.encoder_use_bn,
                                                   args.activation,
                                                   args.strides,
-                                                  args.padding)
+                                                  args.padding,
+                                                  "linear")
 
-        encoder = Model(inputs = input_x, outputs = encoder(input_x))    
     else:
         assert False, "Unrecognized value for encoder: {}".format(args.encoder)
         
@@ -125,7 +125,9 @@ def build_models(args):
                                                "linear")
 
     elif args.generator == "convolutional":
-        generator = networks.dense.build_deconv_model(args.generator_filters,
+        generator = networks.dense.build_deconv_model(generator_input_shape,
+                                                      args.shape,
+                                                      args.generator_filters,
                                                       args.generator_kernel,
                                                       args.generator_wd,
                                                       args.generator_use_bn,
@@ -133,7 +135,6 @@ def build_models(args):
                                                       args.strides,
                                                       args.padding)
 
-        generator = Model(inputs = input_latent, outputs = generator(input_latent))
         
     else:
         assert False, "Unrecognized value for generator: {}".format(args.generator)

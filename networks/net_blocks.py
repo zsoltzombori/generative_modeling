@@ -30,7 +30,7 @@ def dense_block(dims, wd, use_bn, activation):
 def conv_block(filters, kernel, wd, use_bn, activation, strides, padding):
     layers = []
     for filter in filters:
-        layers.append(Convolution2D(filter, kernel, strides, padding, kernel_regularizer=l2(wd)))
+        layers.append(Convolution2D(filter, kernel_size=kernel, strides=strides, padding=padding, kernel_regularizer=l2(wd)))
         if use_bn:
             layers.append(BatchNormalization())
         layers.append(Activation(activation))
@@ -39,7 +39,7 @@ def conv_block(filters, kernel, wd, use_bn, activation, strides, padding):
 def deconv_block(filters, kernel, wd, use_bn, activation, strides, padding):
     layers = []
     for filter in filters:
-        layers.append(Conv2DTranspose(filter, kernel, strides, padding, kernel_regularizer=l2(wd)))
+        layers.append(Conv2DTranspose(filter, kernel_size=kernel, strides=strides, padding=padding, kernel_regularizer=l2(wd)))
         if use_bn:
             layers.append(BatchNormalization())
         layers.append(Activation(activation))
