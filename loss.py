@@ -4,7 +4,6 @@ import keras.backend as K
 import tensorflow as tf
 import numpy as np
 
-
 # loss_features is an AttrDict with all sorts of tensors that are different from the input-output
 # various models have different mechanisms for populating it
 def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True):
@@ -38,6 +37,9 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
     def accuracy(x, x_decoded):
         acc = metrics.binary_accuracy(x, x_decoded)
         return K.mean(acc)
+    def wasserstein_loss(x, x_decoded):
+        #x=(2*x-1)
+        return K.mean(x*x_decoded)
 
     losses = []
     for loss in loss_names:
@@ -63,3 +65,9 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
             return lossValue
         return lossFun
     
+
+def gp_loss(x, x_decoded, interpolated):
+    gradients = K.gradients(x_decoded, interpolated)[0]
+    slope = K.sum(K.square(gradients), axis=np.arange(1, len(gradients.shape)))
+    gp = K.square(1-K.sqrt(slope))
+    return K.mean(gp)
