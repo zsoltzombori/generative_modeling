@@ -13,9 +13,8 @@ import vis
 import samplers
 import util
 
-import networks.dense
 import networks.models
-from keras.datasets import mnist
+from networks import dense, conv
 
 
 def run(args, data):
@@ -45,7 +44,10 @@ def run(args, data):
     if args.optimizer == "rmsprop":
         optimizer = RMSprop(lr=args.lr)
     elif args.optimizer == "adam":
-        optimizer = Adam(lr=args.lr,beta_1=0., beta_2=0.9)
+        if(args.model_type != "gan"):
+            optimizer = Adam(lr=args.lr,beta_1=0., beta_2=0.9)
+        else:
+            optimizer = Adam(lr=args.lr, beta_1=0.5)
     elif args.optimizer == "sgd":
         optimizer = SGD(lr = args.lr, clipvalue=1.0)
     else:
@@ -163,29 +165,18 @@ def build_models(args):
     wgan_model=networks.models.iWGAN_01(args)
             
     if args.discriminator == "dense":
-        discriminator = networks.dense.build_model(args.original_shape,
-                                                   [1],
-                                                   args.discriminator_dims,
-                                                   args.discriminator_wd,
-                                                   args.discriminator_use_bn,
-                                                   args.activation,
-                                                   "sigmoid")
+        discriminator = dense.build_model(args.original_shape, [1], args.discriminator_dims, args.discriminator_wd, args.discriminator_use_bn, args.activation, "sigmoid")
+    elif args.discriminator == "conv":
+        discriminator = conv.build_model(args.original_shape, [1], args.discriminator_conv_channels, args.discriminator_wd, args.discriminator_use_bn, args.activation, "sigmoid")
     elif (args.discriminator== "wgan_disc"):
         print("===============wgan disc=============="); 
-        
         discriminator=wgan_model.build_discriminator(args.discriminator_use_bn);
     else:
         assert False, "Unrecognized value for discriminator: {}".format(args.discriminator)
 
     generator_input_shape = (args.latent_dim, )
     if args.generator == "dense":
-        generator = networks.dense.build_model(generator_input_shape,
-                                               args.original_shape,
-                                               args.generator_dims,
-                                               args.generator_wd,
-                                               args.generator_use_bn,
-                                               args.activation,
-                                               "tanh")
+        generator = dense.build_model(generator_input_shape, args.original_shape, args.generator_dims, args.generator_wd, args.generator_use_bn, args.activation, "tanh")
     elif (args.generator== "wgan_gen"):
         print("===============wgan gen=============="); 
         generator=wgan_model.build_generator(args.generator_use_bn);
