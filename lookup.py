@@ -139,7 +139,7 @@ for X in range(32):
     pca2 = PCA(n_components=1)
     line = pca2.fit(pointsX)
     sumX = sumX + pca2.explained_variance_ratio_[0]
-    sumaX = sumaX + straightness(pointsX)
+    sumaX = sumaX + straightness(res[1][rng])
 
 print("PCA STRAIGHTNESS X: " + str(sumX/31))
 print("ANGULAR STRAIGHTNESS X: " + str(sumaX/31))
@@ -160,7 +160,7 @@ for Y in range(31):
     pca2 = PCA(n_components=1)
     line = pca2.fit(pointsY)
     sumY = sumY + pca2.explained_variance_ratio_[0]
-    sumaY = sumaY + straightness(pointsY)
+    sumaY = sumaY + straightness(res[1][rng])
 
 print("PCA STRAIGHTNESS Y: " + str(sumY/30))
 print("ANGULAR STRAIGHTNESS Y: " + str(sumaY/30))
