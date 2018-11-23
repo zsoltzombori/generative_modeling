@@ -1,9 +1,9 @@
 #!/bin/bash
 
-prefix='vae_conv_'
-for i in `seq 4 4`;
+prefix='vae_lr_'
+for i in `seq 1 4`;
 do
-	epoch=$((i*50))
+	epoch=$((10**i)))
 	echo "$epoch"
 	#./cparam.sh "$prefix$epoch.ini" nb_epoch $epoch
 	#./cparam.sh "$prefix$epoch.ini" outdir "pictures/$prefix$epoch"
@@ -11,8 +11,8 @@ do
 	cd ..
 	#mkdir -p "pictures/$prefix$epoch"
 	#python generative.py "ini/auto-generated/$prefix$epoch.ini" > "pictures/$prefix$epoch/main.log"
-	mkdir -p "pictures/$prefix$epoch/graphs"
-	python lookup.py "ini/auto-generated/$prefix$epoch.ini" > "pictures/$prefix$epoch/graphs/main.log"
+	#mkdir -p "pictures/$prefix$epoch/graphs"
+	#python lookup.py "ini/auto-generated/$prefix$epoch.ini" > "pictures/$prefix$epoch/graphs/main.log"
 	# SCRIPTS
 	cd scripts
 done
