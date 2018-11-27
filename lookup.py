@@ -99,7 +99,6 @@ def parallelness_metric(curves):
             # abs because we compare lines not directions.
             scalar_prod = np.abs(directions[i].dot(directions[j]))
             angle = np.arccos(scalar_prod.clip(-1, +1)) * 180 / np.pi
-            print(i, j, angle)
             angle_sum += angle
             angle_count += 1
     return angle_sum / angle_count
@@ -138,7 +137,6 @@ def sliding_vis_d(coord):
     vs = np.array(vs)
 
     images_gen = generator.predict([vs], batch_size=n)
-    print(">>>", images_gen.shape)
     vis.plotImages(images_gen, 10, 20, 'pictures/lookup/test-%d' % coord)
 
 
@@ -147,8 +145,7 @@ def sliding_vis():
     for i in range(d):
         sliding_vis_d(i)
 
-sliding_vis()
-sys.exit()
+# sliding_vis()
 
 
 def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
@@ -169,9 +166,9 @@ def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
     z_sampled = z_sampled[:inum] ; z_mean = z_mean[:inum] ; z_logvar = z_logvar[:inum]
     assert len(z_mean) == inum
 
-    for i in range(args.latent_dim):
-        print(i, np.std(z_mean[:32, i]), np.std(z_mean[::32, i]))
-        print(i, np.std(z_mean[16*32:17*32, i]), np.std(z_mean[16::32, i]))
+    # for i in range(args.latent_dim):
+    #    print(i, np.std(z_mean[:32, i]), np.std(z_mean[::32, i]))
+    #    print(i, np.std(z_mean[16*32:17*32, i]), np.std(z_mean[16::32, i]))
 
     if do_3d_vis:
         print("VERY SLOW, DON'T RUN IT IN INNER LOOP")
@@ -216,14 +213,20 @@ evrs, straightnesses, parallelnesses = [], [], []
 for (shape, scale, orientation) in planar_slice_specs:
     grid_indices = find_indices_shift(shape, scale, orientation)
     evr, straightness, parallelness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=False)
-    # print("PCA STRAIGHTNESS X: %f" % evr)
-    # print("ANGULAR STRAIGHTNESS X: %f" % straightness)
+    print("PCA STRAIGHTNESS: %f" % evr)
+    print("ANGULAR STRAIGHTNESS: %f" % straightness)
+    print("PARALLELNESS: %f" % parallelness)
     evrs.append(evr)
     straightnesses.append(straightness)
     parallelnesses.append(parallelness)
 
 plt.scatter(evrs, straightnesses)
-plt.savefig("evr-vs-straightness.png")
+mkdir(args.outdir + "/graphs")
+plt.savefig(args.outdir + "/graphs/evr-vs-straightness.png")
+plt.close()
+plt.scatter(evrs, parallelnesses)
+plt.savefig(args.outdir + "/graphs/evr-vs-parallelness.png")
+
 
 
 def two_lines(X, Y):

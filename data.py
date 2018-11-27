@@ -609,7 +609,8 @@ class Dataset_dsprite(Dataset_real):
         super(Dataset_dsprite, self).__init__("dsprite", shape, color=False)
 
         if shape==(64, 64):
-            cacheFile = "datasets/reduced.npz"
+            # cacheFile = "datasets/reduced.npz"
+            cacheFile = "datasets/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz" ; print("THIS DATASET IS HUGE")
         else:
             assert False, "We don't have a bedroom dataset with size {}".format(shape)
         if os.path.isfile(cacheFile):
@@ -620,5 +621,10 @@ class Dataset_dsprite(Dataset_real):
         print("Shape")
         print(self.input['imgs'].shape)
         expanded_imgs = np.expand_dims(self.input['imgs'], axis=3)
+        # this exception code is needed because reduced.npz max=255, and full dsprite max=1.
+        if expanded_imgs.max() == 1:
+            expanded_imgs *= 255
+
+        np.random.shuffle(expanded_imgs) # yes that's an in-place operation
         self.x_train, self.x_test = self.get_normalized_image_data(expanded_imgs, trainSize, testSize)
         return (self.x_train, self.x_test)
