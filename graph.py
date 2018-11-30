@@ -6,8 +6,9 @@ def get_losses(dir):
     with open("pictures/" + dir + "/main.log","r") as file:
         data=file.read()
         lines=data.split("\n")
-        ls=lines[-11].split(" ")
-        print(lines)
+        lines=[line for line in lines if line.find("val_mse_loss")]
+        ls=lines[-1].split(" ")
+        print(len(lines))
         losses=[ls[5],ls[8],ls[11],ls[14],ls[17],ls[20],ls[23],ls[26]]
         return losses
 
