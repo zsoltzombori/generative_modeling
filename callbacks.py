@@ -37,7 +37,8 @@ class ImageDisplayCallback(Callback):
         testBatch = self.x_test[:self.args.batch_size]
         vis.displayReconstructed(testBatch, self.args, self.modelDict, "{}/test-{}".format(self.args.outdir, epoch))
         vis.displayReconstructed(testBatch, self.args, self.modelDict, "{}/test".format(self.args.outdir))
- 
+
+        vis.displayInterp(trainBatch, self.args, self.modelDict, gridSize=10, name="{}/interp-{}".format(self.args.outdir, epoch))
 
 # def get_lr_scheduler(nb_epoch, base_lr, lr_decay_schedule):
 #     assert lr_decay_schedule == sorted(lr_decay_schedule), "lr_decay_schedule has to be monotonically increasing!"
