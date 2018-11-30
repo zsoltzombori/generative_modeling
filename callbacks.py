@@ -10,7 +10,7 @@ import numpy as np
 import vis
 
 class ImageDisplayCallback(Callback):
-    def __init__(self,
+    def __init__(self, 
                  x_train, x_test, args,
                  modelDict, sampler,
                  **kwargs):
@@ -38,6 +38,7 @@ class ImageDisplayCallback(Callback):
         vis.displayReconstructed(testBatch, self.args, self.modelDict, "{}/test-{}".format(self.args.outdir, epoch))
         vis.displayReconstructed(testBatch, self.args, self.modelDict, "{}/test".format(self.args.outdir))
 
+        vis.displayInterp(trainBatch, self.args, self.modelDict, gridSize=10, name="{}/interp-{}".format(self.args.outdir, epoch))
 
 # def get_lr_scheduler(nb_epoch, base_lr, lr_decay_schedule):
 #     assert lr_decay_schedule == sorted(lr_decay_schedule), "lr_decay_schedule has to be monotonically increasing!"
@@ -94,8 +95,8 @@ class ImageDisplayCallback(Callback):
 #         self.stop = stop
 #         super(WeightSchedulerCallback, self).__init__(**kwargs)
 
-#     def on_epoch_end(self, epoch, logs):
-#         phase = 1.0 * (epoch+1) / self.nb_epoch
+#     def on_epoch_end(self, epoch, logs):        
+#         phase = 1.0 * (epoch+1) / self.nb_epoch        
 #         if phase <= self.start:
 #             relative_phase = 0
 #         elif phase >= self.stop:
@@ -116,8 +117,8 @@ class ImageDisplayCallback(Callback):
 #         self.frequency = frequency
 #         super(SaveModelsCallback, self).__init__(**kwargs)
 
-#     def on_epoch_end(self, epoch, logs):
-#         if (epoch+1) % self.frequency != 0: return
+#     def on_epoch_end(self, epoch, logs):        
+#         if (epoch+1) % self.frequency != 0: return        
 #         load_models.saveModel(self.ae, self.prefix + "_model")
 #         load_models.saveModel(self.encoder, self.prefix + "_encoder")
 #         load_models.saveModel(self.encoder_var, self.prefix + "_encoder_var")
@@ -204,6 +205,7 @@ class ImageDisplayCallback(Callback):
 
 #     def on_epoch_end(self, epoch, logs):
 #         self.timeline.append(self.model.predict(self.test_points, batch_size=self.batch_size))
-
+    
 # #    def on_epoch_end(self, epoch, logs):
 # #        self.saveimg(epoch)
+
