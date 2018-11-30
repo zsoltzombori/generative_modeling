@@ -103,6 +103,12 @@ def parallelness_metric(curves):
             angle_count += 1
     return angle_sum / angle_count
 
+def flatness_metric(points):
+    pca = PCA(n_components=2)
+    points_2d = pca.fit_transform(points)
+    flatness = np.sum(pca.explained_variance_ratio_)
+    return flatness
+
 
 def test_straightness():
     a = np.arange(20.0)[:, np.newaxis]
@@ -232,11 +238,13 @@ def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
 
     parallelness = parallelness_metric(z_mean.reshape((32, 32, -1)))
 
-    return evr_mean, straightness_mean, parallelness
+    flatness = flatness_metric(z_mean)
+
+    return evr_mean, straightness_mean, parallelness, flatness
 
 grid_indices = find_indices_shift(shape=1, scale=3, orientation=20)
-evr, straightness, parallelness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=True)
-print("Metrics for 3d vis slice %f %f %f" % (evr, straightness, parallelness))
+evr, straightness, parallelness, flatness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=True)
+print("Metrics for 3d vis slice %f %f %f %f" % (evr, straightness, parallelness, flatness))
 
 np.random.seed(1337)
 planar_slice_specs = []
@@ -246,17 +254,18 @@ for i in range(30):
     orientation = np.random.randint(40)
     planar_slice_specs.append((shape, scale, orientation))
 
-evrs, straightnesses, parallelnesses = [], [], []
+evrs, straightnesses, parallelnesses, flatnesses = [], [], [], []
 for (shape, scale, orientation) in planar_slice_specs:
     grid_indices = find_indices_shift(shape, scale, orientation)
-    evr, straightness, parallelness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=False)
-    print("evr straightness parallelness: %f %f %f" % (evr, straightness, parallelness))
+    evr, straightness, parallelness, flatness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=False)
+    print("evr straightness parallelness_flatness: %f %f %f %f" % (evr, straightness, parallelness, flatness))
     evrs.append(evr)
     straightnesses.append(straightness)
     parallelnesses.append(parallelness)
+    flatnesses.append(flatness)
 
-print("evr straightness parallelness means: %f %f %f" %
-    tuple(map(lambda a: np.mean(np.array(a)), (evrs, straightnesses, parallelnesses))))
+print("evr straightness parallelness flatness_means: %f %f %f %f" %
+    tuple(map(lambda a: np.mean(np.array(a)), (evrs, straightnesses, parallelnesses, flatnesses))))
 
 plt.scatter(evrs, straightnesses)
 mkdir(args.outdir + "/graphs")
