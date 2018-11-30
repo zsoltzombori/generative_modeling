@@ -185,6 +185,30 @@ def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
         plt.savefig(name)
         plt.gcf().clear()
 
+        y_slice = z_mean[16::32, :]
+        y_slice_01 = y_slice[:, [0, 1]]
+        plt.scatter(y_slice_01[:, 0], y_slice_01[:, 1])
+        plt.xlim(-2, 2) ; plt.ylim(-2, 2)
+        plt.savefig(args.outdir + "/graphs/all/slice_y16_coords01")
+        plt.gcf().clear()
+        y_slice_23 = y_slice[:, [2, 3]]
+        plt.scatter(y_slice_23[:, 0], y_slice_23[:, 1], )
+        plt.xlim(-2, 2) ; plt.ylim(-2, 2)
+        plt.savefig(args.outdir + "/graphs/all/slice_y16_coords23")
+        plt.gcf().clear()
+
+        n, d = y_slice.shape
+        f, axes = plt.subplots(d, sharex=True, sharey=True)
+        f.set_figheight(15)
+        axes[0].set_title('Subplots are coordinates of latent space, swiping through a y slice')
+        for i in range(d):
+            axes[i].plot(range(n), y_slice[:, i])
+        f.subplots_adjust(hspace=0)
+        plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
+        plt.savefig(args.outdir + "/graphs/all/slice_y16_all_coords")
+        plt.gcf().clear()
+
+
     straightness_sum = 0.0
     evr_sum = 0.0
 
@@ -201,9 +225,13 @@ def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
 
     return evr_mean, straightness_mean, parallelness
 
+grid_indices = find_indices_shift(shape=1, scale=3, orientation=20)
+evr, straightness, parallelness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=True)
+print("Metrics for 3d vis slice %f %f %f" % (evr, straightness, parallelness))
+
 np.random.seed(1337)
 planar_slice_specs = []
-for i in range(100):
+for i in range(30):
     shape = np.random.randint(3)
     scale = np.random.randint(6)
     orientation = np.random.randint(40)
@@ -213,12 +241,13 @@ evrs, straightnesses, parallelnesses = [], [], []
 for (shape, scale, orientation) in planar_slice_specs:
     grid_indices = find_indices_shift(shape, scale, orientation)
     evr, straightness, parallelness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=False)
-    print("PCA STRAIGHTNESS: %f" % evr)
-    print("ANGULAR STRAIGHTNESS: %f" % straightness)
-    print("PARALLELNESS: %f" % parallelness)
+    print("evr straightness parallelness: %f %f %f" % (evr, straightness, parallelness))
     evrs.append(evr)
     straightnesses.append(straightness)
     parallelnesses.append(parallelness)
+
+print("evr straightness parallelness means: %f %f %f" %
+    tuple(map(lambda a: np.mean(np.array(a)), (evrs, straightnesses, parallelnesses))))
 
 plt.scatter(evrs, straightnesses)
 mkdir(args.outdir + "/graphs")
