@@ -1,5 +1,5 @@
 import numpy as np
-from keras.layers import Dense, Input, Activation, BatchNormalization, Flatten, Reshape, Conv2D
+from keras.layers import Dense, Input, Activation, BatchNormalization, Flatten, Reshape, Conv2D, Conv2DTranspose
 from keras.regularizers import l1, l2
 from keras.models import Model
 
@@ -30,4 +30,51 @@ def build_model(input_shape, output_shape, channels, wd, use_bn, activation, las
 
     model = Model(inputs=inputs, outputs=outputs)
     return model
-    
+
+
+def build_model_conv_encoder(input_shape, output_shape, channels, wd, use_bn, activation, last_activation):
+    inputs = Input(shape=input_shape)
+    outputs = inputs
+
+    outputs = Conv2D(32, 4, strides=(2,2), padding='same', kernel_regularizer=l2(wd))(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Conv2D(32, 4, strides=(2,2), padding='same', kernel_regularizer=l2(wd))(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Conv2D(32, 4, strides=(2,2), padding='same', kernel_regularizer=l2(wd))(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Conv2D(32, 4, strides=(2,2), padding='same', kernel_regularizer=l2(wd))(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Flatten()(outputs)
+    outputs = Dense(256)(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Dense(256)(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Dense(np.prod(output_shape), activation=last_activation)(outputs)
+    outputs = Reshape(output_shape)(outputs)
+
+    model = Model(inputs=inputs, outputs=outputs)
+    return model
+
+def build_model_conv_decoder(input_shape, output_shape, channels, wd, use_bn, activation, last_activation):
+    inputs = Input(shape=input_shape)
+    outputs = inputs
+
+    outputs = Dense(256)(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Dense(np.prod(4*4*32))(outputs)
+    outputs = Activation(activation)(outputs)
+
+    outputs = Reshape((4, 4, 32))(outputs)
+
+    outputs = Conv2DTranspose(32, 4, strides=(2,2), padding='same', kernel_regularizer=l2(wd))(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Conv2DTranspose(32, 4, strides=(2,2), padding='same', kernel_regularizer=l2(wd))(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Conv2DTranspose(32, 4, strides=(2,2), padding='same', kernel_regularizer=l2(wd))(outputs)
+    outputs = Activation(activation)(outputs)
+    outputs = Conv2DTranspose(1, 4, strides=(2,2), padding='same', kernel_regularizer=l2(wd))(outputs)
+    outputs = Reshape(output_shape)(outputs)
+
+    model = Model(inputs=inputs, outputs=outputs)
+    return model
+

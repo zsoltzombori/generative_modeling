@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#lrs="0.0001 0.0003 0.001 0.003 0.01 0.03 0.1 0.3"
-lrs="0.1 0.3"
-prefix='vae_lr_'
+lrs="0.0001 0.0003 0.001 0.003 0.01 0.03 0.1 0.3"
+#lrs="0.1 0.3"
+prefix='vae_b1_lr_'
 for i in $lrs;
 do
 	epoch=$i
