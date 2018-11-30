@@ -124,6 +124,15 @@ generator = modelDict.generator
 dsprites = get_dsprites()
 
 
+index1 = find_index(shape=0, scale=0, orientation=0, posX=0, posY=0)
+index2 = find_index(shape=0, scale=0, orientation=0, posX=31, posY=0)
+index3 = find_index(shape=0, scale=0, orientation=0, posX=0, posY=31)
+anchors = dsprites[[index1, index2, index3]]
+imageBatch = np.concatenate([anchors, dsprites[:args.batch_size-3]])
+imageBatch = np.expand_dims(imageBatch, axis=3)
+vis.displayInterp(imageBatch, args, modelDict, gridSize=10, anchor_indices=[0,1,2], name="{}/interp".format(args.outdir))
+
+
 def sliding_vis_d(coord):
     d = args.latent_dim
     n = args.batch_size
