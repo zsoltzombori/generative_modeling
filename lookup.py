@@ -267,8 +267,11 @@ for (shape, scale, orientation) in planar_slice_specs:
 print("evr straightness parallelness flatness_means: %f %f %f %f" %
     tuple(map(lambda a: np.mean(np.array(a)), (evrs, straightnesses, parallelnesses, flatnesses))))
 
-plt.scatter(evrs, straightnesses)
 mkdir(args.outdir + "/graphs")
+plt.scatter(evrs, straightnesses)
+plt.savefig(args.outdir + "/graphs/evr-vs-straightness.png")
+plt.close()
+plt.scatter(evrs, straightnesses)
 plt.savefig(args.outdir + "/graphs/evr-vs-straightness.png")
 plt.close()
 plt.scatter(evrs, parallelnesses)

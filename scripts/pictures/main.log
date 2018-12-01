@@ -1,0 +1,45 @@
+
+
+
+ini_file :  []
+outdir :  pictures/vae
+model_type :  autoencoder
+memory_share :  0.45
+frequency :  2
+verbose :  2
+optimizer :  adam
+lr :  0.001
+batch_size :  200
+nb_epoch :  50
+loss_encoder :  ('size_loss', 'variance_loss')
+loss_generator :  ('mse_loss',)
+loss_discriminator :  ('mse_loss',)
+metrics :  ('mse_loss',)
+weights :  
+trainSize :  40000
+testSize :  10000
+dataset :  dsprite
+color :  False
+shape :  (64, 64)
+sampling :  True
+activation :  relu
+latent_dim :  10
+encoder :  dense
+encoder_wd :  0.0
+encoder_use_bn :  False
+encoder_dims :  (1000, 1000)
+generator :  dense
+generator_wd :  0.0
+generator_use_bn :  False
+generator_dims :  (1000, 1000)
+discriminator :  dense
+discriminator_wd :  0.0
+discriminator_use_bn :  False
+discriminator_dims :  (1000, 1000)
+gan_generator_update :  1
+gan_discriminator_update :  1
+
+
+
+Keras version:  2.2.2
+(64, 64)

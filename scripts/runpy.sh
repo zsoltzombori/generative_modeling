@@ -1,9 +1,10 @@
 #!/bin/bash
 
-prefix='vae_conv_'
-for i in `seq 4 4`;
+eps="3 6 9 12 15 18 21 24"
+prefix='vae_epoch_'
+for i in $eps;
 do
-	epoch=$((i*50))
+	epoch=$i
 	echo "$epoch"
 	#./cparam.sh "$prefix$epoch.ini" nb_epoch $epoch
 	#./cparam.sh "$prefix$epoch.ini" outdir "pictures/$prefix$epoch"
