@@ -10,6 +10,8 @@ import math
 from scipy.stats import norm
 from keras.models import model_from_json
 
+import grid_layout
+
 def displayRandom(shape, args, models, sampler, name):
     height, width = shape
     cnt = height * width
@@ -34,6 +36,34 @@ def displayReconstructed(imageBatch, args, models, name):
     mergedSet = mergeSets([imageBatch, recons])
     plotImages(mergedSet, 10, 2*args.batch_size // 10, name)
 
+def displayInterp(imageBatch, args, models, name, gridSize, anchor_indices=[12, 9, 50], toroidal=False):
+    assert len(anchor_indices)==3, "Three anchors are expected for interpolation"
+    latentBatch = models.encoder.predict(imageBatch[:args.batch_size], batch_size=args.batch_size)[0]
+
+    anchor1, anchor2, anchor3 = latentBatch[anchor_indices]
+    anchor4 = anchor3 + anchor2 - anchor1
+    anchors = np.array([anchor1, anchor2, anchor3, anchor4])
+    if toroidal:
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TOROIDAL INTERPOLATION! anchor4 calculation is affine, not toroidal.")
+    # TODO different interpolations for different autoencoders!!!
+    interpGrid = grid_layout.create_mine_grid(gridSize, gridSize, args.latent_dim, gridSize-1, anchors, False, False, toroidal=toroidal)
+    n = interpGrid.shape[0]
+    if n < args.batch_size:
+        target_size = args.batch_size
+    else:
+        target_size = args.batch_size * ((n // args.batch_size) + 1)
+    interpGrid = np.tile(interpGrid, [(target_size//n) + 1] + [1] * (interpGrid.ndim-1))[0:target_size]
+    predictedGrid = models.generator.predict(interpGrid, batch_size=args.batch_size)
+    predictedGrid = predictedGrid[0:n]
+
+    prologGrid = np.zeros([gridSize] + list(imageBatch.shape[1:]))
+    prologGrid[0:3] = imageBatch[anchor_indices]
+
+    grid = np.concatenate([prologGrid, predictedGrid])
+    reshapedGrid = grid.reshape([grid.shape[0]] + list(imageBatch.shape[1:]))
+    plotImages(reshapedGrid, gridSize, gridSize+1, name)
+
+    
 
 def plotImages(data, n_x, n_y, name, text=None):
     (height, width, channel) = data.shape[1:]

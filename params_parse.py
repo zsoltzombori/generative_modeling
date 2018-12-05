@@ -8,7 +8,10 @@ def dumpParams(params, ini_file):
         os.makedirs(os.path.dirname(ini_file))
     f = open(ini_file, "w+")
     for k in sorted(params.keys()):
-        print(k+"\t"+str(params[k]), file=f)
+        v = params[k]
+        if isinstance(v, (tuple,)):
+            v = ",".join([str(x) for x in v])
+        print(k+"\t"+str(v), file=f)
 
 # parse boolean, int and float out of string
 # is a string is comma separated, turn it into a list
@@ -54,7 +57,8 @@ def paramsFromIni(ini_file):
         try:
             k, v = l.split(None, 1)
         except:
-            assert False, "Malformed config line " + l
+            print("SKIPPING MALFORMED CONFIG LINE: " + l)
+            continue
         try:
             v = heuristicCast(v)
         except ValueError:

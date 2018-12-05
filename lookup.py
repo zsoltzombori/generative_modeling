@@ -99,10 +99,15 @@ def parallelness_metric(curves):
             # abs because we compare lines not directions.
             scalar_prod = np.abs(directions[i].dot(directions[j]))
             angle = np.arccos(scalar_prod.clip(-1, +1)) * 180 / np.pi
-            print(i, j, angle)
             angle_sum += angle
             angle_count += 1
     return angle_sum / angle_count
+
+def flatness_metric(points):
+    pca = PCA(n_components=2)
+    points_2d = pca.fit_transform(points)
+    flatness = np.sum(pca.explained_variance_ratio_)
+    return flatness
 
 
 def test_straightness():
@@ -125,6 +130,15 @@ generator = modelDict.generator
 dsprites = get_dsprites()
 
 
+index1 = find_index(shape=0, scale=0, orientation=0, posX=0, posY=0)
+index2 = find_index(shape=0, scale=0, orientation=0, posX=31, posY=0)
+index3 = find_index(shape=0, scale=0, orientation=0, posX=0, posY=31)
+anchors = dsprites[[index1, index2, index3]]
+imageBatch = np.concatenate([anchors, dsprites[:args.batch_size-3]])
+imageBatch = np.expand_dims(imageBatch, axis=3)
+vis.displayInterp(imageBatch, args, modelDict, gridSize=10, anchor_indices=[0,1,2], name="{}/interp".format(args.outdir))
+
+
 def sliding_vis_d(coord):
     d = args.latent_dim
     n = args.batch_size
@@ -138,7 +152,6 @@ def sliding_vis_d(coord):
     vs = np.array(vs)
 
     images_gen = generator.predict([vs], batch_size=n)
-    print(">>>", images_gen.shape)
     vis.plotImages(images_gen, 10, 20, 'pictures/lookup/test-%d' % coord)
 
 
@@ -147,8 +160,7 @@ def sliding_vis():
     for i in range(d):
         sliding_vis_d(i)
 
-sliding_vis()
-sys.exit()
+# sliding_vis()
 
 
 def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
@@ -169,9 +181,9 @@ def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
     z_sampled = z_sampled[:inum] ; z_mean = z_mean[:inum] ; z_logvar = z_logvar[:inum]
     assert len(z_mean) == inum
 
-    for i in range(args.latent_dim):
-        print(i, np.std(z_mean[:32, i]), np.std(z_mean[::32, i]))
-        print(i, np.std(z_mean[16*32:17*32, i]), np.std(z_mean[16::32, i]))
+    # for i in range(args.latent_dim):
+    #    print(i, np.std(z_mean[:32, i]), np.std(z_mean[::32, i]))
+    #    print(i, np.std(z_mean[16*32:17*32, i]), np.std(z_mean[16::32, i]))
 
     if do_3d_vis:
         print("VERY SLOW, DON'T RUN IT IN INNER LOOP")
@@ -188,6 +200,30 @@ def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
         plt.savefig(name)
         plt.gcf().clear()
 
+        y_slice = z_mean[16::32, :]
+        y_slice_01 = y_slice[:, [0, 1]]
+        plt.scatter(y_slice_01[:, 0], y_slice_01[:, 1])
+        plt.xlim(-2, 2) ; plt.ylim(-2, 2)
+        plt.savefig(args.outdir + "/graphs/all/slice_y16_coords01")
+        plt.gcf().clear()
+        y_slice_23 = y_slice[:, [2, 3]]
+        plt.scatter(y_slice_23[:, 0], y_slice_23[:, 1], )
+        plt.xlim(-2, 2) ; plt.ylim(-2, 2)
+        plt.savefig(args.outdir + "/graphs/all/slice_y16_coords23")
+        plt.gcf().clear()
+
+        n, d = y_slice.shape
+        f, axes = plt.subplots(d, sharex=True, sharey=True)
+        f.set_figheight(15)
+        axes[0].set_title('Subplots are coordinates of latent space, swiping through a y slice')
+        for i in range(d):
+            axes[i].plot(range(n), y_slice[:, i])
+        f.subplots_adjust(hspace=0)
+        plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
+        plt.savefig(args.outdir + "/graphs/all/slice_y16_all_coords")
+        plt.gcf().clear()
+
+
     straightness_sum = 0.0
     evr_sum = 0.0
 
@@ -202,28 +238,42 @@ def evalutate_2d_grid(dsprites, grid_indices, do_3d_vis):
 
     parallelness = parallelness_metric(z_mean.reshape((32, 32, -1)))
 
-    return evr_mean, straightness_mean, parallelness
+    flatness = flatness_metric(z_mean)
+
+    return evr_mean, straightness_mean, parallelness, flatness
+
+grid_indices = find_indices_shift(shape=1, scale=3, orientation=20)
+evr, straightness, parallelness, flatness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=True)
+print("Metrics for 3d vis slice %f %f %f %f" % (evr, straightness, parallelness, flatness))
 
 np.random.seed(1337)
 planar_slice_specs = []
-for i in range(100):
+for i in range(30):
     shape = np.random.randint(3)
     scale = np.random.randint(6)
     orientation = np.random.randint(40)
     planar_slice_specs.append((shape, scale, orientation))
 
-evrs, straightnesses, parallelnesses = [], [], []
+evrs, straightnesses, parallelnesses, flatnesses = [], [], [], []
 for (shape, scale, orientation) in planar_slice_specs:
     grid_indices = find_indices_shift(shape, scale, orientation)
-    evr, straightness, parallelness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=False)
-    # print("PCA STRAIGHTNESS X: %f" % evr)
-    # print("ANGULAR STRAIGHTNESS X: %f" % straightness)
+    evr, straightness, parallelness, flatness = evalutate_2d_grid(dsprites, grid_indices, do_3d_vis=False)
+    print("evr straightness parallelness_flatness: %f %f %f %f" % (evr, straightness, parallelness, flatness))
     evrs.append(evr)
     straightnesses.append(straightness)
     parallelnesses.append(parallelness)
+    flatnesses.append(flatness)
+
+print("evr straightness parallelness flatness_means: %f %f %f %f" %
+    tuple(map(lambda a: np.mean(np.array(a)), (evrs, straightnesses, parallelnesses, flatnesses))))
 
 plt.scatter(evrs, straightnesses)
-plt.savefig("evr-vs-straightness.png")
+mkdir(args.outdir + "/graphs")
+plt.savefig(args.outdir + "/graphs/evr-vs-straightness.png")
+plt.close()
+plt.scatter(evrs, parallelnesses)
+plt.savefig(args.outdir + "/graphs/evr-vs-parallelness.png")
+
 
 
 def two_lines(X, Y):
