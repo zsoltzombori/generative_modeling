@@ -175,6 +175,8 @@ class Dataset_mnist(Dataset_real):
         super(Dataset_mnist, self).__init__("mnist", shape, color=False)
         self.anchor_indices = [12, 9, 50]
 
+        cacheFile_64_64 = "datasets/mnist_64_64.npz"
+
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train = x_train.astype('float32') / 255.
         x_test = x_test.astype('float32') / 255.

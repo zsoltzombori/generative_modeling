@@ -32,6 +32,11 @@ args.original_size = np.prod(args.original_shape)
 y_train_onehot = keras.utils.to_categorical(y_train, num_classes=args.y_label_count)
 y_test_onehot  = keras.utils.to_categorical(y_test,  num_classes=args.y_label_count)
 
+print(x_train.shape)
+print(y_train_onehot.shape)
+print(x_test.shape)
+print(y_test_onehot.shape)
+
 if args.model_type == "autoencoder":
     autoencoder.run(args, ((x_train, y_train_onehot), (x_test, y_test_onehot)))
 elif args.model_type == "gan":

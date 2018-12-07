@@ -85,14 +85,18 @@ def run(args, data):
 def build_models(args):
     loss_features = AttrDict({})
 
-    input_x = Input(shape=args.original_shape)
-    input_y = Input(shape=(args.y_label_count, ))
-    merged = Concatenate()([Flatten()(input_x), input_y])
+    input_x = Input(shape=args.original_shape, name="qqqqqq")
+    input_y = Input(shape=(args.y_label_count, ), name="asdasdasd")
+    #merged = Concatenate()([Flatten()(input_x), input_y])
+    
+    input_y_map = Lambda(lambda y: tf.reshape(y, (-1, 1, 1,10)) * tf.ones(shape=[1, 64, 64, 10]) )(input_y)
+    merged = Concatenate()([input_x, input_y_map])
+     
     merge_model = Model(inputs=[input_x, input_y], outputs = merged)
-    concatenated_input_size = np.prod(args.original_shape) + args.y_label_count
+    concatenated_input_size = (64, 64, 11) #K.shape(merged) #np.prod(args.original_shape) + args.y_label_count
 
-    input_latent = Input(shape=(args.latent_dim, ))
-    input_y2 = Input(shape=(args.y_label_count, ))
+    input_latent = Input(shape=(args.latent_dim, ), name="anyad")
+    input_y2 = Input(shape=(args.y_label_count,), name="xxxxxxx")
     merged_latent = Concatenate()([input_latent, input_y2])
     merge_latent_model = Model(inputs=[input_latent, input_y2], outputs = merged_latent)
 
@@ -113,7 +117,7 @@ def build_models(args):
         encoder = conv.build_model((concatenated_input_size, ), encoder_output_shape, args.encoder_conv_channels, args.encoder_wd, args.encoder_use_bn, args.activation, "linear")
 
     elif args.encoder == "conv_deconv":
-        encoder =  conv.build_model_conv_encoder((concatenated_input_size,), encoder_output_shape,
+        encoder =  conv.build_model_conv_encoder(concatenated_input_size, encoder_output_shape,
                                       args.encoder_conv_channels,
                                       args.encoder_wd,
                                       args.encoder_use_bn,
