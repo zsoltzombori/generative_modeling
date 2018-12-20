@@ -8,6 +8,11 @@ def spherical_sampler(batch_size, latent_dim):
     z_sample /= np.linalg.norm(z_sample, axis=1, keepdims=True)
     return z_sample
 
+def ball_sampler(batch_size, latent_dim):
+    z_sample = np.random.normal(size=(batch_size, latent_dim))
+    z_sample /= np.linalg.norm(z_sample, axis=1, keepdims=True)
+    z_sample *= np.power(np.random.uniform(), 1/latent_dim)
+
 def toroidal_sampler(batch_size, latent_dim):
     assert latent_dim % 2 == 0
     z_sample = np.random.normal(size=(batch_size, latent_dim))
@@ -21,4 +26,17 @@ def toroidal_sampler(batch_size, latent_dim):
 
 
 def sampler_factory(args):
-    return gaussian_sampler
+
+    '''   if args.toroidal:
+        print("toroidal sampling")
+        return toroidal_sampler
+
+    elif args.spherical:
+        print("spherical sampling")
+        return spherical_sampler
+    '''
+    if args.ball_vae:
+        print("ball sampling, IGÉNYTELEN")
+        return ball_sampler
+    else:
+        return gaussian_sampler

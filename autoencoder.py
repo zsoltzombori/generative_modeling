@@ -10,6 +10,7 @@ import loss
 import vis
 import samplers
 import callbacks
+import numpy as np
 
 from networks import dense, conv
 
@@ -116,15 +117,15 @@ def build_models(args):
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
     if args.sampling:
-        sampler_model = add_gaussian_sampling(encoder_output_shape, args)
+        sampler_model = add_ellipsoid_sampling(encoder_output_shape, args)
 
         inputs = Input(shape=args.original_shape)
         hidden = encoder(inputs)
-        (z, z_mean, z_log_var) = sampler_model(hidden)
-        encoder = Model(inputs, [z, z_mean, z_log_var])
+        (z, center, evalues) = sampler_model(hidden)
+        encoder = Model(inputs, [z, center, evalues])
         
-        loss_features["z_mean"] = z_mean
-        loss_features["z_log_var"] = z_log_var
+        loss_features["center"] = center
+        loss_features["evalues"] = evalues
         output = generator(z)
         ae = Model(inputs, output)
     else:
@@ -154,4 +155,26 @@ def add_gaussian_sampling(input_shape, args):
         return z_mean + K.exp(z_log_var / 2) * epsilon
     z = Lambda(sampling)([z_mean, z_log_var])
     sampler_model = Model(inputs, [z, z_mean, z_log_var])
+    return sampler_model
+
+def add_ellipsoid_sampling(input_shape, args):
+    assert input_shape[-1] == 2
+    inputs = Input(shape=input_shape)
+
+    center = Lambda(lambda x: x[...,0], output_shape=input_shape[:-1])(inputs)
+    evalues = Lambda(lambda x: x[...,1], output_shape=input_shape[:-1])(inputs)
+    
+    output_shape = list(K.int_shape(center))
+    output_shape[0] = args.batch_size
+    
+    def sampling(inputs):
+        center, evalues = inputs
+        epsilon = K.random_normal(shape=output_shape, mean=0.)
+        normalized = K.l2_normalize(epsilon)
+        radius = K.random_uniform(shape=output_shape) ** (1.0/input_shape[0])
+        
+        return center + evalues * radius * normalized
+    
+    z = Lambda(sampling)([center, evalues])
+    sampler_model = Model(inputs, [z, center, evalues])
     return sampler_model
