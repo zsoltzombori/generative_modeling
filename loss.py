@@ -41,24 +41,30 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
         #x=(2*x-1)
         return K.mean(x*x_decoded)
 
-    def ellipse_loss(x, x_decoded):
+    def outside_sphere_loss(x, x_decoded):
+        d = args.latent_dim
         z = loss_features.center
         e = K.exp(loss_features.evalues)
 
-        # lehet, hogy koordinátánként kéne
+        # penalizes if axes of ellipsoid are not contained in unit sphere.
+        dsquare = K.sum(K.square(z), axis = -1) + K.sum(K.square(e), axis = -1) / d + 2 * K.dot(K.abs(z), K.transpose(e)) / d
+        # simplified version, penalizes if bounding box of ellipsoid is not contained in unit sphere.
+        # (seemingly equivalent to axes-based version.)
+        # dsquare = K.sum((K.abs(z) + e) ** 2, axis=-1)
+
+        # TODO truncation should probably be applied coordinate-wise.
+        loss_outside = 1000 * K.maximum(0.0, dsquare - 1)
+        return K.mean(loss_outside)
+
+    def ellipse_loss(x, x_decoded):
         d = args.latent_dim
-        
-        
-        dsquare = K.sum(K.square(z), axis = -1) + K.sum(K.square(e), axis = -1) / d
-        + 2 * K.dot(K.abs(z), e) / d
+        z = loss_features.center
+        e = K.exp(loss_features.evalues)
 
-        loss_outside = K.maximum(0.0, dsquare - 1)
-            
         loss_kl = - K.sum(loss_features.evalues)
+        loss_kl *= 0.01
 
-        loss = loss_outside + loss_kl
-        
-        return K.mean(loss)
+        return K.mean(loss_kl)
             
 
     losses = []

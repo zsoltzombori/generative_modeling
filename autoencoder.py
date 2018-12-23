@@ -170,10 +170,10 @@ def add_ellipsoid_sampling(input_shape, args):
     def sampling(inputs):
         center, evalues = inputs
         epsilon = K.random_normal(shape=output_shape, mean=0.)
-        normalized = K.l2_normalize(epsilon)
+        normalized = K.l2_normalize(epsilon, axis=-1)
         radius = K.random_uniform(shape=output_shape) ** (1.0/input_shape[0])
         
-        return center + evalues * radius * normalized
+        return center + K.exp(evalues) * radius * normalized
     
     z = Lambda(sampling)([center, evalues])
     sampler_model = Model(inputs, [z, center, evalues])
