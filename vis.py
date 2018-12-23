@@ -36,7 +36,7 @@ def displayReconstructed(imageBatch, args, models, name):
     mergedSet = mergeSets([imageBatch, recons])
     plotImages(mergedSet, 10, 2*args.batch_size // 10, name)
 
-def displayInterp(imageBatch, args, models, name, gridSize, anchor_indices=[12, 9, 50], toroidal=False):
+def displayInterp(imageBatch, args, models, name, gridSize, anchor_indices=[0, 1, 2], toroidal=False):
     assert len(anchor_indices)==3, "Three anchors are expected for interpolation"
     latentBatch = models.encoder.predict(imageBatch[:args.batch_size], batch_size=args.batch_size)[0]
 

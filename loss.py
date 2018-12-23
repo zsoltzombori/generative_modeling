@@ -53,7 +53,7 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
         # dsquare = K.sum((K.abs(z) + e) ** 2, axis=-1)
 
         # TODO truncation should probably be applied coordinate-wise.
-        loss_outside = 1000 * K.maximum(0.0, dsquare - 1)
+        loss_outside = 10 * K.maximum(0.0, dsquare - 1)
         return K.mean(loss_outside)
 
     def ellipse_loss(x, x_decoded):
@@ -62,7 +62,7 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
         e = K.exp(loss_features.evalues)
 
         loss_kl = - K.sum(loss_features.evalues)
-        loss_kl *= 0.01
+        loss_kl *= 0.05
 
         return K.mean(loss_kl)
             
