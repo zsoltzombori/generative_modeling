@@ -38,7 +38,13 @@ class ImageDisplayCallback(Callback):
         vis.displayReconstructed(testBatch, self.args, self.modelDict, "{}/test-{}".format(self.args.outdir, epoch))
         vis.displayReconstructed(testBatch, self.args, self.modelDict, "{}/test".format(self.args.outdir))
 
-        vis.displayInterp(trainBatch, self.args, self.modelDict, gridSize=10, name="{}/interp-{}".format(self.args.outdir, epoch))
+        #vis.displayInterp(trainBatch, self.args, self.modelDict, gridSize=10, name="{}/interp-{}".format(self.args.outdir, epoch))
+
+
+class FlushCallback(Callback):
+    def on_epoch_end(self, epoch, logs):
+        sys.stdout.flush()
+
 
 # def get_lr_scheduler(nb_epoch, base_lr, lr_decay_schedule):
 #     assert lr_decay_schedule == sorted(lr_decay_schedule), "lr_decay_schedule has to be monotonically increasing!"
@@ -124,10 +130,6 @@ class ImageDisplayCallback(Callback):
 #         load_models.saveModel(self.encoder_var, self.prefix + "_encoder_var")
 #         load_models.saveModel(self.generator, self.prefix + "_generator")
 
-
-# class FlushCallback(Callback):
-#     def on_epoch_end(self, epoch, logs):
-#         sys.stdout.flush()
 
 # class CollectActivationCallback(Callback):
 #     def __init__(self, nb_epoch, frequency, batch_size, batch_per_epoch, network, trainSet, testSet, layerIndices, prefix, **kwargs):
