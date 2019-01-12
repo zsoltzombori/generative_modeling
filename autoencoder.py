@@ -122,7 +122,8 @@ def build_models(args):
         assert False, "Unrecognized value for generator: {}".format(args.generator)
 
     if args.sampling:
-        sampler_model = add_ellipsoid_sampling(encoder_output_shape, args)
+        print("box sampling!")
+        sampler_model = add_box_sampling(encoder_output_shape, args)
 
         inputs = Input(shape=args.original_shape)
         hidden = encoder(inputs)
@@ -180,6 +181,25 @@ def add_ellipsoid_sampling(input_shape, args):
         
         return center + K.exp(evalues) * radius * normalized
     
+    z = Lambda(sampling)([center, evalues])
+    sampler_model = Model(inputs, [z, center, evalues])
+    return sampler_model
+
+def add_box_sampling(input_shape, args):
+    assert input_shape[-1] == 2
+    inputs = Input(shape=input_shape)
+
+    center = Lambda(lambda x: x[...,0], output_shape=input_shape[:-1])(inputs)
+    evalues = Lambda(lambda x: x[...,1], output_shape=input_shape[:-1])(inputs)
+
+    output_shape = list(K.int_shape(center))
+    output_shape[0] = args.batch_size
+
+    def sampling(inputs):
+        center, evalues = inputs
+        from_box = K.random_uniform(shape=output_shape, minval=-1, maxval=+1)
+        return center + K.exp(evalues) * from_box
+
     z = Lambda(sampling)([center, evalues])
     sampler_model = Model(inputs, [z, center, evalues])
     return sampler_model

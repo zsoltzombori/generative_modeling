@@ -56,13 +56,23 @@ def loss_factory(loss_names, args, loss_features=None, combine_with_weights=True
         loss_outside = 10 * K.maximum(0.0, dsquare - 1)
         return K.mean(loss_outside)
 
+    def outside_box_loss(x, x_decoded):
+        d = args.latent_dim
+        z = loss_features.center
+        e = K.exp(loss_features.evalues)
+
+        margin_sum = K.maximum(K.abs(z) + e - 1, 0)
+        loss_outside = 10 * K.square(margin_sum)
+
+        return K.mean(loss_outside)
+
     def ellipse_loss(x, x_decoded):
         d = args.latent_dim
         z = loss_features.center
         e = K.exp(loss_features.evalues)
 
-        loss_kl = - K.sum(loss_features.evalues)
-        loss_kl *= 0.05
+        # longer than 1 axes are not promoted, helping the outside_*_loss do its job.
+        loss_kl = - K.sum(K.minimum(loss_features.evalues, 0))
 
         return K.mean(loss_kl)
             

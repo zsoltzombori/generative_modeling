@@ -46,7 +46,7 @@ def visualize(images):
     plt.scatter(z_mean[:n, 0], z_mean[:n, 1], c="red")
     plt.scatter(z_mean[:n, 0]+np.exp(z_logvar[:n, 0]), z_mean[:n, 1]+np.exp(z_logvar[:n, 1]), c="blue")
     plt.scatter(z_sampled[:n, 0], z_sampled[:n, 1], c="green")
-    plt.savefig("vis.png")
+    plt.savefig(args.outdir + "/vis.png")
 
 args = params.getArgs()
 x_train, x_test = get_data(args)
