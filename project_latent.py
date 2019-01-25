@@ -6,6 +6,8 @@ mpl.use('Agg')
 
 from sklearn.decomposition import PCA
 from matplotlib import pyplot as plt
+from matplotlib.patches import Ellipse
+import math
 
 import vis
 import model_IO
@@ -43,9 +45,22 @@ def visualize(images):
     print(z_logvar[:10])
     print(z_sampled[:10])
     n = None
-    plt.scatter(z_mean[:n, 0], z_mean[:n, 1], c="red")
-    plt.scatter(z_mean[:n, 0]+np.exp(z_logvar[:n, 0]), z_mean[:n, 1]+np.exp(z_logvar[:n, 1]), c="blue")
-    plt.scatter(z_sampled[:n, 0], z_sampled[:n, 1], c="green")
+
+    ells = [Ellipse(xy = z_mean[i],
+                width = 2 * np.exp(z_logvar[i][0]),
+                height = 2 * np.exp(z_logvar[i][1]))
+        for i in range(inum)]     
+
+    fig, ax = plt.subplots(subplot_kw = {'aspect' : 'equal'})
+
+    for e in ells:
+         ax.add_artist(e)
+         e.set_clip_box(ax.bbox)
+         e.set_alpha(0.5)
+        
+    #plt.scatter(z_mean[:n, 0], z_mean[:n, 1], c="red")
+    #plt.scatter(z_mean[:n, 0]+np.exp(z_logvar[:n, 0]), z_mean[:n, 1]+np.exp(z_logvar[:n, 1]), c="blue")
+    plt.scatter(z_sampled[:n, 0], z_sampled[:n, 1], s = 1, c="green")
     plt.savefig("vis.png")
 
 args = params.getArgs()
