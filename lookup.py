@@ -7,7 +7,7 @@ mpl.use('Agg')
 from sklearn.decomposition import PCA
 from matplotlib import pyplot as plt
 
-
+import random
 import vis
 import model_IO
 import params
@@ -128,6 +128,76 @@ modelDict = model_IO.load_autoencoder(args)
 encoder = modelDict.encoder
 generator = modelDict.generator
 dsprites = get_dsprites()
+
+def one_diff():
+	ranges = [3,6,40,32,32]
+	index_pairs = []
+	diffs = []
+	for x in range(60000):
+		attrs = [np.random.randint(ranges[0]),
+		np.random.randint(ranges[1]),
+		np.random.randint(ranges[2]),
+		np.random.randint(ranges[3]),
+		np.random.randint(ranges[4])]
+		#print(attrs)
+		index_first = find_index(attrs[0],attrs[1],attrs[2],attrs[3],attrs[4])
+		#image_first = dsprites[index_first]
+		#print(dps)
+
+		factor_number = np.random.randint(5)
+		factor_prev = attrs[factor_number]
+		r = list(range(0,factor_prev)) + list(range(factor_prev+1, ranges[factor_number]))
+		factor_new = random.choice(r)
+		attrs[factor_number] = factor_new
+		#print(attrs)
+		index_second = find_index(attrs[0],attrs[1],attrs[2],attrs[3],attrs[4])
+		#image_second = dsprites[index_second]
+
+		index_pair = [index_first, index_second]
+		print(index_pair)
+		print(factor_number)
+		index_pairs.append(index_pair)
+		diffs.append(factor_number)
+
+	index_pairs = np.array(index_pairs)
+	diffs = np.array(diffs)
+	np.savez("pairs60k_1diff", pairs=index_pairs, targets=diffs)
+	print(index_pairs.shape, index_pairs)
+
+#one_diff()
+
+def one_equal():
+	ranges = [3,6,40,32,32]
+	index_pairs = []
+	diffs = []
+	for x in range(60000):
+		attrs = [np.random.randint(ranges[0]),
+                np.random.randint(ranges[1]),
+                np.random.randint(ranges[2]),
+                np.random.randint(ranges[3]),
+                np.random.randint(ranges[4])]
+
+		index_first = find_index(attrs[0],attrs[1],attrs[2],attrs[3],attrs[4])
+		print(attrs)
+		factor_number = np.random.randint(5) # attr index that can't change
+		for f in range(5):
+			if factor_number != f:
+				rnd_range = list(range(0,attrs[f])) + list(range(attrs[f]+1, ranges[f]))
+				attrs[f] = random.choice(rnd_range)
+		index_second = find_index(attrs[0],attrs[1],attrs[2],attrs[3],attrs[4])
+		#image_second = dsprites[index_second]
+		print(attrs)
+		index_pair = [index_first, index_second]
+		print(index_pair)
+		print(factor_number)
+		index_pairs.append(index_pair)
+		diffs.append(factor_number)
+
+	index_pairs = np.array(index_pairs)
+	diffs = np.array(diffs)
+	np.savez("pairs60k_1equal", pairs=index_pairs, targets=diffs)
+	#print(index_pairs.shape, index_pairs)
+one_equal()
 
 
 index1 = find_index(shape=0, scale=0, orientation=0, posX=0, posY=0)
