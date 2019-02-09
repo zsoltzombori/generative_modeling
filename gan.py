@@ -30,6 +30,8 @@ def run(args, data):
     
     args['input_shape']=np.shape(x_train)[1:]
     
+    print(np.shape(x_train)[1:])
+    
     models, loss_features = build_models(args)
     assert set(("generator", "discriminator","gen_disc")) <= set(models.keys()), models.keys()
 
@@ -190,6 +192,12 @@ def build_models(args):
     modelDict.discriminator = discriminator
     modelDict.generator = generator
     
+    plot_model=False;
+    if(plot_model):
+        from keras.utils import plot_model
+        plot_model(discriminator, 'model_disc.png',True,True,True)
+        plot_model(generator, 'model_gen.png',True,True,True)
+        
     return modelDict, loss_features
 
 
