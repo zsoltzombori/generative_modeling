@@ -17,10 +17,10 @@ import data
 
 def get_data(args):
     data_object = data.load(args.dataset, shape=args.shape, color=args.color)
-    (x_train, x_test) = data_object.get_data(args.trainSize, args.testSize)
+    ((x_train, y_train), (x_test, y_test)) = data_object.get_data(args.trainSize, args.testSize)
     args.original_shape = x_train.shape[1:]
     args.original_size = np.prod(args.original_shape)
-    return x_train, x_test
+    return ((x_train, y_train), (x_test, y_test))
 
 
 def mkdir(directory):
@@ -28,7 +28,7 @@ def mkdir(directory):
         os.makedirs(directory)
 
 
-def visualize(images):
+def visualize(images, labels):
     inum = len(images)
     batch_size = args.batch_size
     images_padded = np.concatenate((images, images), axis=0)
@@ -51,25 +51,71 @@ def visualize(images):
                 height = 2 * np.exp(z_logvar[i][1]))
         for i in range(inum)]     
 
-    fig, ax = plt.subplots(subplot_kw = {'aspect' : 'equal'})
+    fig, ax = plt.subplots(subplot_kw = {'aspect' : 'equal'})   
 
-    for e in ells:
-         ax.add_artist(e)
-         e.set_clip_box(ax.bbox)
-         e.set_alpha(0.5)
+    blu = []
+    g = [] 
+    r = []
+    c = []
+    m = [] 
+    y = []
+    bla = []
+    o = []
+    t = []
+    br = []
+
+    for i in range(inum):
+         ax.add_artist(ells[i])
+         ells[i].set_clip_box(ax.bbox)
+         ells[i].set_alpha(0.5)
+         if labels[i] == 0:     
+                ells[i].set_facecolor('blue')
+                blu.append(ells[i])
+         elif labels[i] == 1:
+                ells[i].set_facecolor('green')
+                g.append(ells[i])     
+         elif labels[i] == 2:
+                ells[i].set_facecolor('red')
+                r.append(ells[i])
+         elif labels[i] == 3:
+                ells[i].set_facecolor('cyan')
+                c.append(ells[i])
+         elif labels[i] == 4:
+                ells[i].set_facecolor('magenta')
+                m.append(ells[i])
+         elif labels[i] == 5:
+                ells[i].set_facecolor('yellow')
+                y.append(ells[i])
+         elif labels[i] == 6:
+                ells[i].set_facecolor('black')
+                bla.append(ells[i])
+         elif labels[i] == 7:
+                ells[i].set_facecolor('orange')
+                o.append(ells[i])
+         elif labels[i] == 8:
+                ells[i].set_facecolor('teal')
+                t.append(ells[i])
+         else:
+                ells[i].set_facecolor('brown')
+                br.append(ells[i])
+
+    ax.legend((blu[0], g[0], r[0], c[0], m[0], y[0], bla[0], o[0], t[0], br[0]), 
+       (0, 1, 2, 3, 4, 5, 6, 7, 8, 9), loc="best")
+    
         
     #plt.scatter(z_mean[:n, 0], z_mean[:n, 1], c="red")
     #plt.scatter(z_mean[:n, 0]+np.exp(z_logvar[:n, 0]), z_mean[:n, 1]+np.exp(z_logvar[:n, 1]), c="blue")
-    plt.scatter(z_sampled[:n, 0], z_sampled[:n, 1], s = 1, c="green")
+    plt.scatter(z_sampled[:n, 0], z_sampled[:n, 1], s = 1, c="white")
     plt.savefig("vis.png")
 
 args = params.getArgs()
-x_train, x_test = get_data(args)
+((x_train, y_train), (x_test, y_test)) = get_data(args)
 
 modelDict = model_IO.load_autoencoder(args)
 encoder = modelDict.encoder
 generator = modelDict.generator
 
 images = x_train[:1000]
+labels = y_train[:1000]
 print(">>>", images.shape)
-visualize(images)
+visualize(images, labels)
