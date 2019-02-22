@@ -77,8 +77,9 @@ def getArgs():
     # parser.add_argument('--lr_decay_schedule', dest="lr_decay_schedule", default='0.5,0.8', help="Comma separated list floats from [0,1] indicating where to decimate the learning rate. Ex 0.2,0.5 means we decimate the learning rate at 20% and 50% of the training")
 
 
+    default_args_param = parser.parse_args([])
     args_param = parser.parse_args()
-    args = params_parse.mergeParamsWithInis(args_param)
+    args = params_parse.mergeParamsWithInis(default_args_param, args_param)
 
     # make sure the following params are tuples
     for k in ("encoder_dims", "generator_dims", "discriminator_dims", "loss_encoder", "loss_generator", "loss_discriminator", "metrics", "shape", "discriminator_conv_channels"):

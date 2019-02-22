@@ -66,19 +66,21 @@ def paramsFromIni(ini_file):
         params[k] = v
     return params
 
-def mergeParamsWithInis(args_param, ini_files_param="ini_file"):
-
+def mergeParamsWithInis(default_args_param, args_param, ini_files_param="ini_file"):
+    
     args = AttrDict()
 
     args_param_dict = vars(args_param)
-
+    default_args_param_dict = vars(default_args_param)
+    
     for k in args_param_dict:
         args[k] = heuristicCast(args_param_dict[k])
-
+        
     if args_param_dict[ini_files_param]:
         for ini_file in args_param_dict[ini_files_param]:
             args_ini_dict = paramsFromIni(ini_file)
             for k in args_ini_dict:
-                args[k] = args_ini_dict[k]
+                if k in default_args_param_dict and default_args_param_dict[k] == args_param_dict[k]: # only update defaults, not those overwritten on the command line
+                    args[k] = args_ini_dict[k]
                     
     return args
