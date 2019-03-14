@@ -50,6 +50,8 @@ def load(dataset, shape=None, color=True):
         return Dataset_bedroom(shape)
     elif dataset == "syn-circles":
         return Dataset_circles_centered(shape)
+    elif dataset == "syn-circles-peri":
+        return Dataset_circles_peri(shape)
     elif dataset == "syn-moving-circles":
         return Dataset_moving_circles(shape)
     elif dataset == "syn-rectangles":
@@ -71,9 +73,11 @@ def load(dataset, shape=None, color=True):
     else:
         raise Exception("Invalid dataset: ", dataset)
 
+
 def test(file):
-    datasets ["mnist", "celeba", "bedroom", "syn-circles", "syn-moving-circles", "syn-rectangles", "syn-gradient", "dsprite"]
-    shape=(64, 64)
+    datasets["mnist", "celeba", "bedroom", "syn-circles", "syn-circles-peri",
+             "syn-moving-circles", "syn-rectangles", "syn-gradient", "dsprite"]
+    shape = (64, 64)
     trainSize = 20
     testSize = 1
     color = True
@@ -83,11 +87,13 @@ def test(file):
         data_object = load(dataset, shape, color)
         x_train, x_test = data_object.get_data(trainSize, testSize)
         if x_train.shape[feature_axis] == 1:
-            x_train = np.concatenate([x_train, x_train, x_train], axis=feature_axis)
+            x_train = np.concatenate(
+                [x_train, x_train, x_train], axis=feature_axis)
         result.append(x_train)
         x_batch = next(data_object.get_train_flow(trainSize))
         if x_batch.shape[feature_axis] == 1:
-            x_batch = np.concatenate([x_batch, x_batch, x_batch], axis=feature_axis)
+            x_batch = np.concatenate(
+                [x_batch, x_batch, x_batch], axis=feature_axis)
         result.append(x_batch)
 
     result = np.concatenate(result)
@@ -96,7 +102,7 @@ def test(file):
 
 def test_uniform(file):
     datasets = ["syn-rectangles", "syn-gradient"]
-    shape = (64,64)
+    shape = (64, 64)
     color = False
     result = []
     for dataset in datasets:
@@ -112,17 +118,22 @@ def test_uniform(file):
 class Dataset(object):
     def __init__(self, name, shape, color=False, finite=False, synthetic=False):
         print(shape)
-        assert len(shape)==2, "Expected shape of length 2, got {} instead".format(shape)
+        assert len(
+            shape) == 2, "Expected shape of length 2, got {} instead".format(shape)
         self.name = name
         self.shape = shape
         self.color = color
         self.finite = finite
         self.synthetic = synthetic
-        self.anchor_indices = [14, 6, 0] # this can be overridden for each dataset
+        # this can be overridden for each dataset
+        self.anchor_indices = [14, 6, 0]
+
     def get_data(self, trainSize, testSize):
         assert False, "Not Yet Implemented"
+
     def get_train_flow(self, batch_size, augmentation_ratio=0):
         assert False, "Not Yet Implemented"
+
     def get_nearest_samples(self, generated_samples):
         trainSize = generated_samples.shape[0]
         x_train, x_test = self.get_data(trainSize, 1)
@@ -147,17 +158,21 @@ class Dataset(object):
 
 class Dataset_real(Dataset):
     def __init__(self, name, shape, color=False):
-        super(Dataset_real, self).__init__(name, shape, color=color, finite=False, synthetic=False)
+        super(Dataset_real, self).__init__(name, shape,
+                                           color=color, finite=False, synthetic=False)
+
     def get_train_flow(self, batch_size, augmentation_ratio=0):
         imageGenerator = ImageDataGenerator(
             width_shift_range=augmentation_ratio,
             height_shift_range=augmentation_ratio
         )
         try:
-            flow_object = imageGenerator.flow(self.x_train, self.x_train, batch_size = batch_size)
+            flow_object = imageGenerator.flow(
+                self.x_train, self.x_train, batch_size=batch_size)
         except AttributeError:
             assert False, "You need to call get_data to instantiate self.x_train"
         return flow_object
+
     def get_normalized_image_data(self, input, trainSize, testSize):
         assert trainSize > 0 and testSize > 0, "trainSize and testSize must be positive"
         x_train = input[:trainSize]
@@ -165,33 +180,37 @@ class Dataset_real(Dataset):
         x_train = x_train.astype('float32') / 255.
         x_test = x_test.astype('float32') / 255.
         return(x_train, x_test)
+
     def limit_data(self, input, size):
         if size > 0:
             input = input[:size]
         return input
 
+
 class Dataset_mnist(Dataset_real):
-    def __init__(self, shape=(28,28), digit=None):
+    def __init__(self, shape=(28, 28), digit=None):
         super(Dataset_mnist, self).__init__("mnist", shape, color=False)
         self.anchor_indices = [12, 9, 50]
 
         cacheFile_64_64 = "datasets/mnist_64_64.npz"
+        '''
         if shape == (64, 64) and os.path.isfile(cacheFile_64_64):
             assert digit==None, "no digit filtering on cached data, sorry."
             cache = np.load(cacheFile_64_64)
             self.x_train_orig = cache["x_train"]
             self.x_test_orig = cache["x_test"]
             return
+        '''
 
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
         x_train = x_train.astype('float32') / 255.
         x_test = x_test.astype('float32') / 255.
 
         if digit is not None:
-            x_train = x_train[y_train==digit]
-            x_test = x_test[y_test==digit]
-            y_train = y_train[y_train==digit]
-            y_test = y_test[y_test==digit]
+            x_train = x_train[y_train == digit]
+            x_test = x_test[y_test == digit]
+            y_train = y_train[y_train == digit]
+            y_test = y_test[y_test == digit]
 
         # add_feature_dimension
         x_train = np.expand_dims(x_train, feature_axis)
@@ -203,23 +222,29 @@ class Dataset_mnist(Dataset_real):
             np.savez(cacheFile_64_64, x_train=x_train, x_test=x_test)
         self.x_train_orig = x_train
         self.x_test_orig = x_test
+        self.y_train_orig = y_train
+        self.y_test_orig = y_test
+
     def get_data(self, trainSize, testSize):
         self.x_train = self.limit_data(self.x_train_orig, trainSize)
         self.x_test = self.limit_data(self.x_test_orig, testSize)
-        return (self.x_train, self.x_test)
+        self.y_train = self.limit_data(self.y_train_orig, trainSize)
+        self.y_test = self.limit_data(self.y_test_orig, testSize)
+        return ((self.x_train, self.y_train), (self.x_test, self.y_test))
+
 
 class Dataset_celeba(Dataset_real):
-    def __init__(self, shape=(64,64), color=True):
+    def __init__(self, shape=(64, 64), color=True):
         super(Dataset_celeba, self).__init__("celeba", shape, color)
 
         # determine cache file
-        if shape==(72, 60):
+        if shape == (72, 60):
             directory = "datasets/celeba/img_align_celeba-60x72"
             if color:
                 cacheFile = "datasets/celeba_72_60_color.npy"
             else:
                 cacheFile = "datasets/celeba_72_60.npy"
-        elif shape==(72, 64) or shape==(64,64):
+        elif shape == (72, 64) or shape == (64, 64):
             directory = "datasets/celeba/img_align_celeba-64x72"
             if color:
                 cacheFile = "datasets/celeba_72_64_color.npy"
@@ -240,23 +265,27 @@ class Dataset_celeba(Dataset_real):
                     if color:
                         img = Image.open(os.path.join(directory, f))
                     else:
-                        img = Image.open(os.path.join(directory, f)).convert("L")
+                        img = Image.open(os.path.join(
+                            directory, f)).convert("L")
                     arr = np.array(img)
                     if height is None:
                         height, width = arr.shape[:2]
                     else:
-                        assert (height, width) == arr.shape[:2], "Bad size %s %s" % (f, str(arr.shape))
+                        assert (height, width) == arr.shape[:2], "Bad size %s %s" % (
+                            f, str(arr.shape))
                     imgs.append(arr)
             self.input = np.array(imgs)
-            np.save(cacheFile,self.input)
+            np.save(cacheFile, self.input)
 
         if not color:
             self.input = np.expand_dims(self.input, feature_axis)
-        if shape==(64, 64):
+        if shape == (64, 64):
             print("Truncated faces to get shape", shape)
-            self.input = self.input[:,4:68,:,:]
+            self.input = self.input[:, 4:68, :, :]
+
     def get_data(self, trainSize, testSize):
-        self.x_train, self.x_test = self.get_normalized_image_data(self.input, trainSize, testSize)
+        self.x_train, self.x_test = self.get_normalized_image_data(
+            self.input, trainSize, testSize)
         return (self.x_train, self.x_test)
 
     def get_labels(self):
@@ -278,25 +307,31 @@ class Dataset_celeba(Dataset_real):
 
 
 class Dataset_bedroom(Dataset_real):
-    def __init__(self, shape=(64,64)):
+    def __init__(self, shape=(64, 64)):
         super(Dataset_bedroom, self).__init__("bedroom", shape, color=True)
 
-        if shape==(64, 64):
+        if shape == (64, 64):
             cacheFile = "datasets/bedroom/bedroom_64_64.npy"
         else:
-            assert False, "We don't have a bedroom dataset with size {}".format(shape)
+            assert False, "We don't have a bedroom dataset with size {}".format(
+                shape)
         if os.path.isfile(cacheFile):
             self.input = np.load(cacheFile)
         else:
             assert False, "Missing cache file: {}".format(cacheFile)
+
     def get_data(self, trainSize, testSize):
-        self.x_train, self.x_test = self.get_normalized_image_data(self.input, trainSize, testSize)
+        self.x_train, self.x_test = self.get_normalized_image_data(
+            self.input, trainSize, testSize)
         return (self.x_train, self.x_test)
+
 
 class Dataset_synthetic(Dataset):
     def __init__(self, name, shape, finite):
         assert shape is not None, "Synthetic datasets must have a valid shape argument"
-        super(Dataset_synthetic, self).__init__(name, shape=shape, color=False, finite=finite, synthetic=True)
+        super(Dataset_synthetic, self).__init__(
+            name, shape=shape, color=False, finite=finite, synthetic=True)
+
     def generate_samples_from_params(self, params):
         size = len(params)
         data = np.zeros((size, self.shape[0], self.shape[1]))
@@ -304,31 +339,42 @@ class Dataset_synthetic(Dataset):
             self.generate_one_sample(data[i], params[i])
         data = np.expand_dims(data, feature_axis)
         return data
+
     def get_M_Mprime_L(self, generated_samples):
         nearest_params = self.get_nearest_params(generated_samples)
         nearest_true = self.generate_samples_from_params(nearest_params)
 
         sample_axes = tuple(range(generated_samples.ndim)[1:])
-        L = np.mean(np.sqrt(np.sum(np.square(generated_samples - nearest_true), axis=sample_axes)))
+        L = np.mean(
+            np.sqrt(np.sum(np.square(generated_samples - nearest_true), axis=sample_axes)))
 
         true_params = self.find_matching_sample_params(nearest_params)
         true_samples = self.generate_samples_from_params(true_params)
-        Mprime = np.mean(np.sqrt(np.sum(np.square(true_samples - generated_samples), axis=sample_axes)))
-        M = np.mean(np.sqrt(np.sum(np.square(true_samples - nearest_true), axis=sample_axes)))
+        Mprime = np.mean(
+            np.sqrt(np.sum(np.square(true_samples - generated_samples), axis=sample_axes)))
+        M = np.mean(
+            np.sqrt(np.sum(np.square(true_samples - nearest_true), axis=sample_axes)))
         return M, Mprime, L
+
     def find_matching_sample_params(params):
         assert False, "NYI"
+
     def generate_one_sample(self, data, random_sample):
         assert False, "NYI"
+
     def get_uniform_data(self):
         assert False, "NYI"
+
     def get_nearest_params(self, data):
         assert False, "NYI"
 
+
 class Dataset_syn_finite(Dataset_synthetic):
     def __init__(self, name, shape):
-        super(Dataset_syn_finite, self).__init__(name, shape=shape, finite=True)
+        super(Dataset_syn_finite, self).__init__(
+            name, shape=shape, finite=True)
         self.generate_finite_set()
+
     def get_data(self, trainSize, testSize):
         assert trainSize > 0 and testSize > 0, "trainSize and testSize must be positive"
         train_indices = np.random.choice(len(self.finite_set), trainSize)
@@ -336,20 +382,26 @@ class Dataset_syn_finite(Dataset_synthetic):
         self.x_train = self.finite_set[train_indices]
         self.x_test = self.finite_set[test_indices]
         return (self.x_train, self.x_test)
+
     def get_uniform_data(self):
         return self.finite_set
+
     def get_train_flow(self, batch_size, augmentation_ratio=0):
         assert augmentation_ratio == 0, "Augmentation_ratio for synthetic datasets should be 0!"
+
         class FiniteGenerator(object):
             def __init__(self, finite_set, batch_size):
                 self.finite_set = finite_set
                 self.batch_size = batch_size
                 self.index_range = list(range(len(self.finite_set)))
+
             def __next__(self):
-                selected_indices = np.random.choice(self.index_range, self.batch_size)
+                selected_indices = np.random.choice(
+                    self.index_range, self.batch_size)
                 result = self.finite_set[selected_indices]
                 return [result, result]
         return FiniteGenerator(self.finite_set, batch_size)
+
     def get_nearest_samples(self, generated_samples):
         x_true = self.finite_set(self.finite_set.shape[0], -1)
         x_generated = generated_samples.reshape(generated_samples.shape[0], -1)
@@ -368,12 +420,15 @@ class Dataset_syn_finite(Dataset_synthetic):
             hist[nearest_index] += 1
         result = np.array(result)
         return result, hist
-    def generate_finite_set(self): # TO BE OVERWRITTEN
+
+    def generate_finite_set(self):  # TO BE OVERWRITTEN
         self.finite_set = None
 
 class Dataset_circles_centered(Dataset_syn_finite):
     def __init__(self, shape):
-        super(Dataset_circles_centered, self).__init__("syn-circles", shape=shape)
+        super(Dataset_circles_centered, self).__init__(
+            "syn-circles", shape=shape)
+
     def generate_one_sample(self, data, radius):
         center = min(data.shape) // 2
         for y in range(data.shape[0]):
@@ -392,7 +447,9 @@ class Dataset_circles_centered(Dataset_syn_finite):
 
 class Dataset_moving_circles(Dataset_syn_finite):
     def __init__(self, shape):
-        super(Dataset_moving_circles, self).__init__("syn-moving-circles", shape=shape)
+        super(Dataset_moving_circles, self).__init__(
+            "syn-moving-circles", shape=shape)
+
     def generate_one_sample(self, data, xxx_todo_changeme):
         (center_x, center_y) = xxx_todo_changeme
         radius = min(data.shape) // 8
@@ -400,6 +457,7 @@ class Dataset_moving_circles(Dataset_syn_finite):
             for x in range(data.shape[1]):
                 if (x-center_x)**2 + (y-center_y)**2 < radius**2:
                     data[y, x] = 1
+
     def generate_finite_set(self):
         shape = self.shape
         radius = min(shape) // 8
@@ -415,23 +473,30 @@ class Dataset_moving_circles(Dataset_syn_finite):
         data = np.expand_dims(data, feature_axis)
         self.finite_set = data
 
+
 class Dataset_syn_infinite(Dataset_synthetic):
     def __init__(self, name, shape):
-        super(Dataset_syn_infinite, self).__init__(name, shape=shape, finite=False)
+        super(Dataset_syn_infinite, self).__init__(
+            name, shape=shape, finite=False)
+
     def get_data(self, trainSize, testSize):
         x_train = self.generate_samples(trainSize)
         x_test = self.generate_samples(testSize)
         return (x_train, x_test)
+
     def get_train_flow(self, batch_size, augmentation_ratio=0):
         assert augmentation_ratio == 0, "Augmentation_ratio for synthetic datasets should be 0!"
+
         class Generator(object):
             def __init__(self, batch_size, generator):
                 self.generator = generator
                 self.batch_size = batch_size
+
             def __next__(self):
                 result = self.generator(batch_size)
                 return [result, result]
         return Generator(batch_size, self.generate_samples)
+
     def get_uniform_data(self):
         samples = self.get_uniform_samples()
         data = np.zeros((len(samples), self.shape[0], self.shape[1]))
@@ -439,6 +504,7 @@ class Dataset_syn_infinite(Dataset_synthetic):
             self.generate_one_sample(data[i], sample)
         data = np.expand_dims(data, feature_axis)
         return data
+
     def generate_samples(self, size):
         data = np.zeros((size, self.shape[0], self.shape[1]))
         params = self.sampler(size)
@@ -446,14 +512,37 @@ class Dataset_syn_infinite(Dataset_synthetic):
             self.generate_one_sample(data[i], params[i])
         data = np.expand_dims(data, feature_axis)
         return data
+
     def sampler(self, size):
         assert False, "NYI"
+
     def get_uniform_samples(self):
         assert False, "NYI"
 
+class Dataset_circles_peri(Dataset_syn_infinite):
+    def __init__(self, shape):
+        super(Dataset_circles_peri, self).__init__(
+            "syn-circles-peri", shape=shape)
+
+    def generate_one_sample(self, data, v): 
+        v = v / 2 + 1
+        v *= np.array(self.shape)
+        radius = 5
+        for y in range(data.shape[0]):
+            for x in range(data.shape[1]):
+                if (y-v[0])**2 + (x-v[1])**2 < radius**2:
+                    data[y,x] = np.exp((-(v[1]-x)**2 - (v[0]-y)**2)/2 /5 /5)
+
+    def sampler(self, size):
+        v = np.random.normal(size = (size, 2))
+        v /= np.linalg.norm(v, axis=1, keepdims = True)
+        return v
+
 class Dataset_syn_rectangles(Dataset_syn_infinite):
     def __init__(self, shape):
-        super(Dataset_syn_rectangles, self).__init__("syn-rectangles", shape=shape)
+        super(Dataset_syn_rectangles, self).__init__(
+            "syn-rectangles", shape=shape)
+
     def generate_one_sample(self, data, coordinates):
         assert len(coordinates) == 4
         h, w = data.shape
@@ -462,8 +551,10 @@ class Dataset_syn_rectangles(Dataset_syn_infinite):
         ys = sorted(ys.astype(int))
         xs = sorted(xs.astype(int))
         data[ys[0]:ys[1], xs[0]:xs[1]] = 1
+
     def sampler(self, size):
-        return np.random.uniform(size=(size,4))
+        return np.random.uniform(size=(size, 4))
+
     def get_uniform_samples(self):
         size = 10
         samples = []
@@ -471,65 +562,84 @@ class Dataset_syn_rectangles(Dataset_syn_infinite):
             for y2 in range(y1+1, size):
                 for x1 in range(size-1):
                     for x2 in range(x1+1, size):
-                        sample = np.array([y1,y2,x1,x2]) * 1.0 / size
+                        sample = np.array([y1, y2, x1, x2]) * 1.0 / size
                         samples.append(sample)
         samples = np.array(samples)
         return samples
 
+
 class Dataset_syn_gradient(Dataset_syn_infinite):
     def __init__(self, shape):
         super(Dataset_syn_gradient, self).__init__("syn-gradient", shape=shape)
+
     def generate_one_sample(self, data, direction):
         h, w = data.shape
-        assert h==w
+        assert h == w
         c, s = np.cos(direction), np.sin(direction)
         for y in range(h):
             for x in range(w):
                 yy = 2 * float(y) / h - 1
                 xx = 2 * float(x) / w - 1
                 scalar_product = yy * s + xx * c
-                normed = (scalar_product / np.sqrt(2) + 1) / 2 # even the 45 degree gradients are in [0, 1].
+                # even the 45 degree gradients are in [0, 1].
+                normed = (scalar_product / np.sqrt(2) + 1) / 2
                 data[y, x] = normed
+
     def sampler(self, size):
         return np.random.uniform(0.0, 2*np.pi, size=size)
+
     def get_uniform_samples(self):
         return np.linspace(0, 2*np.pi, 360, endpoint=False)
 
+
 class Dataset_syn_constant_uniform(Dataset_syn_infinite):
     def __init__(self, shape):
-        super(Dataset_syn_constant_uniform, self).__init__("syn-constant-uniform", shape=shape)
+        super(Dataset_syn_constant_uniform, self).__init__(
+            "syn-constant-uniform", shape=shape)
+
     def generate_one_sample(self, data, level):
         data[:, :] = level
+
     def sampler(self, size):
         return np.random.uniform(0, 1, size=size)
+
     def get_uniform_samples(self):
         return np.linspace(0, 1, 1001, endpoint=True)
+
     def get_nearest_params(self, data):
         # to clip or not to clip.
-        return data.mean(axis=tuple(range(data.ndim)[1:])).reshape((-1,1))
+        return data.mean(axis=tuple(range(data.ndim)[1:])).reshape((-1, 1))
+
     def find_matching_sample_params(self, params):
         true_params = self.sampler(len(params))
         true_params = np.sort(true_params)
-        sorter = np.argsort(params[:,0])
+        sorter = np.argsort(params[:, 0])
         invert_sorter = np.argsort(sorter)
         return true_params[invert_sorter]
 
+
 class Dataset_syn_constant_normal(Dataset_syn_infinite):
     def __init__(self, shape):
-        super(Dataset_syn_constant_normal, self).__init__("syn-constant-normal", shape=shape)
+        super(Dataset_syn_constant_normal, self).__init__(
+            "syn-constant-normal", shape=shape)
+
     def generate_one_sample(self, data, level):
         data[:, :] = level
+
     def sampler(self, size):
         return np.random.normal(0.5, 0.1, size=size)
+
     def get_uniform_samples(self):
         return np.linspace(0, 1, 1001, endpoint=True)
+
     def get_nearest_params(self, data):
         # to clip or not to clip.
-        return data.mean(axis=tuple(range(data.ndim)[1:])).reshape((-1,1))
+        return data.mean(axis=tuple(range(data.ndim)[1:])).reshape((-1, 1))
+
     def find_matching_sample_params(self, params):
         true_params = self.sampler(len(params))
         true_params = np.sort(true_params)
-        sorter = np.argsort(params[:,0])
+        sorter = np.argsort(params[:, 0])
         invert_sorter = np.argsort(sorter)
         return true_params[invert_sorter]
 
@@ -549,14 +659,16 @@ class Dataset_syn_constant_normal(Dataset_syn_infinite):
 
 def resize_bedroom(sizeX, sizeY, count, outputFile):
     directory = "datasets/bedroom/data"
+
     def auxFun(path, count):
-        if count <= 0: return (0, [])
+        if count <= 0:
+            return (0, [])
         if path.endswith('.webp'):
             img = Image.open(path)
             arr = np.array(img)
             arr = scipy.misc.imresize(arr, size=(sizeX, sizeY, 3))
             return (1, [arr])
-        images=[]
+        images = []
         imgCount = 0
         for f in sorted(os.listdir(path)):
             f = os.path.join(path, f)
@@ -575,7 +687,8 @@ def resize_images(dataset, sizeX, sizeY, sizeZ, outputFile=None):
     result = []
     for i in range(dataset.shape[0]):
         image = dataset[i]
-        image_resized = scipy.ndimage.zoom(image, zoom=(1.0 * sizeX / image.shape[0], 1.0 * sizeY / image.shape[1], 1.0 * sizeZ / image.shape[2]))
+        image_resized = scipy.ndimage.zoom(image, zoom=(
+            1.0 * sizeX / image.shape[0], 1.0 * sizeY / image.shape[1], 1.0 * sizeZ / image.shape[2]))
         result.append(image_resized)
     result = np.array(result)
     if outputFile is not None:
@@ -604,19 +717,23 @@ def load_celeba_labels():
     labels = labels[sorter]
     return label_names, labels
 
+
 class Dataset_dsprite(Dataset_real):
-    def __init__(self, shape=(64,64)):
+    def __init__(self, shape=(64, 64)):
         super(Dataset_dsprite, self).__init__("dsprite", shape, color=False)
 
-        if shape==(64, 64):
+        if shape == (64, 64):
             # cacheFile = "datasets/reduced.npz"
-            cacheFile = "datasets/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz" ; print("THIS DATASET IS HUGE")
+            cacheFile = "datasets/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz"
+            print("THIS DATASET IS HUGE")
         else:
-            assert False, "We don't have a bedroom dataset with size {}".format(shape)
+            assert False, "We don't have a bedroom dataset with size {}".format(
+                shape)
         if os.path.isfile(cacheFile):
             self.input = np.load(cacheFile)
         else:
             assert False, "Missing cache file: {}".format(cacheFile)
+
     def get_data(self, trainSize, testSize):
         print("Shape")
         print(self.input['imgs'].shape)
@@ -625,6 +742,7 @@ class Dataset_dsprite(Dataset_real):
         if expanded_imgs.max() == 1:
             expanded_imgs *= 255
 
-        np.random.shuffle(expanded_imgs) # yes that's an in-place operation
-        self.x_train, self.x_test = self.get_normalized_image_data(expanded_imgs, trainSize, testSize)
+        np.random.shuffle(expanded_imgs)  # yes that's an in-place operation
+        self.x_train, self.x_test = self.get_normalized_image_data(
+            expanded_imgs, trainSize, testSize)
         return (self.x_train, self.x_test)
