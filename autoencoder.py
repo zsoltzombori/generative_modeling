@@ -41,6 +41,8 @@ def run(args, data):
         optimizer = Adam(lr=args.lr, clipvalue=1.0)
     elif args.optimizer == "sgd":
         optimizer = SGD(lr = args.lr, clipvalue=1.0)
+    elif args.optimizer == "adagrad":
+        optimizer = Adagrad(lr=args.lr, epsilon=None, decay=0.0)
     else:
         assert False, "Unknown optimizer %s" % args.optimizer
 
@@ -111,6 +113,14 @@ def build_models(args):
                                       args.generator_wd,
                                       args.generator_use_bn,
                                       args.activation,
+                                      "linear")
+    elif args.generator == "dense-tanh":
+        generator = dense.build_model(generator_input_shape,
+                                      args.original_shape,
+                                      args.generator_dims,
+                                      args.generator_wd,
+                                      args.generator_use_bn,
+                                      "tanh",
                                       "linear")
     elif args.generator == "conv":
         generator = conv.build_model(generator_input_shape, args.original_shape, args.generator_conv_channels, args.generator_wd, args.generator_use_bn, args.activation, "linear")
