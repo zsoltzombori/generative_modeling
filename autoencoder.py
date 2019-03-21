@@ -121,7 +121,7 @@ def build_models(args):
                                       args.generator_wd,
                                       args.generator_use_bn,
                                       "tanh",
-                                      "linear")
+                                      "sigmoid")
     elif args.generator == "conv":
         generator = conv.build_model(generator_input_shape, args.original_shape, args.generator_conv_channels, args.generator_wd, args.generator_use_bn, args.activation, "linear")
     elif args.generator == "conv_deconv":
