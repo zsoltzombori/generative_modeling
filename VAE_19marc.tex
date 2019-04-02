@@ -1,0 +1,747 @@
+\documentclass[t]{beamer}
+%\documentclass{article}
+%\usepackage{beamerarticle}
+%\usepackage{amssymb}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[magyar]{babel}
+%\usepackage{graphics}
+\usepackage{tikz}
+\selectlanguage{magyar}
+%
+\input{hpbk_macros.tex}
+\mode<presentation>
+{
+  \usetheme{default}
+ \setbeamertemplate{headline}
+  {\leavevmode
+  \begin{beamercolorbox}[wd=.4\paperwidth,ht=2.25ex,dp=1ex,left]{section in head/foot}%
+    \usebeamerfont{section in head/foot}\hspace*{2ex}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.2\paperwidth,ht=2.25ex,dp=1ex,left]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\hspace*{2em}\insertauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.4\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertsubtitle{}\hspace*{2em}
+    \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+  \end{beamercolorbox}%
+  }
+  \setbeamertemplate{footline}
+  {\leavevmode
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,left]{section in head/foot}%
+    \usebeamerfont{section in head/foot}\hspace*{2ex}\insertinstitute
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\hspace*{2em}
+  \end{beamercolorbox}%
+  }
+  \usecolortheme{crane}
+  \usecolortheme{orchid}
+  \useinnertheme[shadow]{rounded}
+}
+%
+
+\title{\textbf{(Variational) Autoencoder}}
+
+\subtitle{}
+
+\author{Kiss Melinda Flóra}
+\date{}
+
+\begin{document}
+
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Autoencoder}
+
+  Goal: reconstruct the input
+
+  \begin{figure}
+    \includegraphics[scale=0.12]{AE.png}
+  \end{figure}
+
+  Encoder:
+  
+  \begin{itemize}
+  \item Maps the input to the latent space
+  \item $h = f(x)$ 
+  \end{itemize}
+
+  Decoder:
+
+  \begin{itemize}
+  \item Reconstruct the input from the latent space
+    representation
+  \item $r = g(h)$
+  \end{itemize}
+
+  We want $\hat{x} = g(f(x))$ to be close to $x$.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Autoencoder}
+  
+  Autoencoding is a data compression algorithm where the
+  compression and decompression functions are
+
+  \begin{itemize}
+  \item data-specific
+  \item lossy 
+  \item learned automatically from examples
+  \end{itemize}
+
+  \vspace{15pt}
+
+  Not good for data compression:
+
+  \begin{itemize}
+  \item data-specific
+  \item Very hard to train one, which does a better job than
+    JPEG
+  \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+  Principal component analysis vs autoencoder
+  
+  \begin{figure}
+    \includegraphics[scale=0.3]{PCA_AE.png}
+  \end{figure}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Constraints}
+
+  We hope we can discover dependencies in the data. 
+  
+  \begin{figure}
+    \includegraphics[scale=0.2]{autoencoder2.png}
+  \end{figure}
+
+  We need to constrain the model to prevent memorizing.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Autoencoder}
+
+  An ideal autoencoder is
+
+  \vspace{5pt}
+
+  \begin{itemize}
+  \item Sensitive enough to the inputs to acccurately build
+    a reconstruction
+  \item Insensitive enough so the model doesn't simply
+    memorize the data. 
+  \end{itemize}
+
+  \vspace{15pt}
+
+  In many cases the loss function consists of two parts:
+
+  \vspace{5pt}
+
+  \begin{itemize}
+  \item Reconstruction loss $\mathcal{L}(x, g(f(x)))$
+  \item Regularizer, which discourages memorizing. 
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Undercomplete autoencoder}
+
+  Easiest way is to constrain the number of nodes in the
+  hidden layers. 
+
+  \begin{figure}
+    \includegraphics[scale=0.2]{autoencoder.png}
+  \end{figure}
+
+  Limits the amount of information that can flow through the
+  network.
+
+  \vspace{2mm}
+  
+  No regularizer, only reconstruction loss. 
+  
+\end{frame}
+
+\begin{frame}
+  \frametitle{Sparse autoencoder}
+
+  Regularized autoencoder: we have constraints, but not on
+  the dimensions. 
+
+  \begin{figure}
+    \includegraphics[scale=0.2]{SparseAE.png}
+  \end{figure}
+
+  Only a few nodes are activated. 
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Sparse autoencoder}
+
+  Loss function: Reconstruction loss + sparsity constraint
+
+  \vspace{15pt}
+
+  Two types:
+
+  \begin{itemize}
+  \item $L_1$ regularization
+  \end{itemize}
+
+  \vspace{10pt}
+
+  sparsity constraint = $\lambda \sum_{i}|a_i^{(h)}|$
+
+  \vspace{10pt}
+
+  $\lambda$ is a hyperprameter, $a_i^{(h)}$ is the activation of
+  the $i$th node in the hidden layer.
+
+  \vspace{10pt}
+
+  \begin{itemize}
+  \item Kullback-Leibler divergence
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Kullback-Leibler divergence}
+
+  Measures distance between two distributions
+
+  \[
+  D_{\text{KL}}(p \| q) = \int p(x)\cdot \log
+  \frac{p(x)}{q(x)}\ dx = \int p(x)\cdot \big(\log p(x) - \log
+  q(x)\big)\ dx
+\]
+
+\[
+  D_{\text{KL}}(p \| q) = E_{x\sim p} \log \frac{p(x)}{q(x)}
+\]
+
+\begin{itemize}
+  \item Not symmetric
+  \item Triangle inequality doesn't hold
+  \item nonegative
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Sparse autoencoder}
+
+  $\rho$: sparsity parameter: small number
+
+  \vspace{5pt}
+
+  For all nodes in the hidden layer
+
+  \[
+    \hat{\rho}_j= \frac{1}{m}\sum_{i=1}^m (a_j^{(h)}(x^{(i)}))
+  \]
+
+  Sparsity constraint:
+  $\sum_{j=1}^{s_h} D_{\text{KL}}(\rho \| \hat{\rho}_j)$,
+  Kullback-Leibler divergence berween two Bernoulli
+  distributions
+  \[
+  D_{\text{KL}}(\rho \| \hat{\rho}_j) = \rho \log \frac{\rho
+  }{\hat{\rho}_j} + (1-\rho) \log \frac{1-\rho}{1-
+    \hat{\rho}_j}
+\]
+
+Loss function:
+
+\[
+  \mathcal{L}(x, \hat{x})+ \beta \sum_{j=1}^{s_h}
+  D_{\text{KL}}(\rho \| \hat{\rho}_j),
+\]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Denoising autoencoder}
+
+  \begin{figure}
+    \includegraphics[scale=0.25]{Denoising.png}
+  \end{figure}
+
+\end{frame}
+
+\begin{frame}
+
+\begin{columns}
+
+    \begin{column}{0.5\textwidth}
+      \begin{figure}
+        \includegraphics[scale=0.2]{mnistAE.png}
+      \end{figure}
+    \end{column}
+
+    \begin{column}{0.5\textwidth}
+      
+      \vspace{15pt}
+      
+      Training an autoencoder on the MNIST dataset, and
+      visualizing the encodings from a 2D latent space
+      reveals the formation of distinct clusters. This makes
+      sense, as distinct encodings for each image type makes
+      it far easier for the decoder to decode them. 
+    \end{column}
+    
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Variational autoencoder}
+
+  \textbf{Generative model:}
+
+  \vspace{10pt}
+
+  Goal: approximate the underlying $p^*(x)$ distribution of
+  the training set.
+
+  \vspace{10pt}
+
+  Want to generate new samples, similar to the training
+  set.
+
+  \vspace{20pt}
+
+  \textbf{Latent variable model:}
+
+  \vspace{10pt}
+
+  Learn a low-dimensional latent representation
+
+  \vspace{10pt}
+
+  We assume it generated the actual training data. 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Problem scenario}
+
+  We have a dataset
+  ${\mathcal{D}} = \{{\bf{x}}^{(i)}\}_{i=1}^n$ consisting of
+  $n$ i.i.d samples from some continuous or discrete
+  variable $x$.
+
+  \vspace{2mm}
+  
+  We assume the data was generated by a random process,
+  involving an unobserved continuous variable ${\bf{z}}$.
+
+  \begin{enumerate}
+  \item A value ${\bf{z}}^{(i)}$ is generated from some
+    prior distribution $p({\bf{z}})$
+    
+    \vspace{2mm}
+    
+  \item A value ${\bf{x}}^{(i)}$ is generated from some
+    conditional distribution
+    $p({\bf{x}} \mid{\bf{z}})$.
+  \end{enumerate}
+
+  \vspace{2mm}
+
+  \[
+    p(x) = \int p(x|z) p(z)\ dz
+  \]
+
+  
+  \vspace{2mm}
+
+  We aim to maximize the probability of each $x^{(i)}$ in the
+  training set.  
+
+ \end{frame}
+
+
+\begin{frame}
+  We are interested in a general algorithm, which works in
+  the case of
+
+  \vspace{2mm}
+
+  \begin{enumerate}
+  \item Intractability: the marginal likelihood:
+    \[
+      p(x) = \int p(x\mid z) p(z) dz
+    \]
+    and the posterior density:
+    \[
+      p(z\mid x)= \frac{p(x, z)}{p(x)}
+    \]
+    are both intractable,
+
+    \vspace{2mm}
+
+  \item A large dataset: we have so much data that
+    sampling-based solutions would be too slow.
+
+    \[
+      p(x) \approx \frac{1}{N}\sum_{i=1}^N p(x|z_i)
+    \]
+  \end{enumerate}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{The prior and the likelihood}
+  
+   We assume that samples of $z$ can be drawn from a simple
+  distribution, i.e $\mathcal{N}(0,I)$.
+
+  \vspace{2mm}
+
+  Also, we assume that the likelihood is from a parametric
+  family with parameters $\theta$.
+  
+  \[
+    p_\theta(x|z) = \mathcal{N}(x| f(z,\theta), \sigma^2
+    \cdot I),
+  \]
+  so it is Gaussian with mean $f(z,\theta)$ and covariance
+  $\sigma^2\cdot I$.
+
+  \vspace{2mm}
+
+  We want to optimize the $\theta$ parameters, so the
+  logarithm of the marginal likelihood will be maximal:
+  \[
+    \log p_{\theta}(x^{(1)}, \dots, x^{(n)})= \sum_{i=1}^n
+    \log p_{\theta}(x^{(i)}).
+  \]
+
+
+\end{frame}
+
+\begin{frame}
+  We could compute $p(x^{(i)})$ approximately, by sampling a
+  lot of $z$ values, $z_1, \dots, z_\ell$, then compute $1/\ell
+  \sum_j p(x^{(i)}| z_j) $, but usually the $\ell$ has to be
+  very large.
+
+  \vspace{2.5mm}
+
+  
+  In practice, for most $z$, the probability
+  $p_{\theta}(x^{(i)}\mid z)$ will be almost zero, so they
+  contribute nothing to $p_\theta(x^{(i)})$.
+
+  \vspace{2.5mm}
+
+  
+  The key idea behind the variational autoencoder is that we
+  would like to sample values of $z$ that are likely to have
+  produced $x^{(i)}$.
+
+  \vspace{2.5mm}
+
+  So we want to infer the characteristics of $z$, but we can
+  only see the $x^{(i)}$.
+
+  \vspace{2.5mm}
+  
+  We cannot use the posterior $p_{\theta}(z\mid x^{(i)})$
+  because is intractable, so we will approximate it with a
+  new distribution, $q_{\phi}(z\mid x^{(i)})$.
+ \end{frame}
+
+\begin{frame}
+  
+  \begin{figure}
+    \includegraphics[scale=0.35]{VAE.png}
+  \end{figure}
+
+  \vspace{2mm}
+
+  If the space of $z$ values that are likely under
+  $q_{\phi}$ is much smaller than those likely under $p(z)$,
+  then we can compute
+  $E_{q_{\phi}(z\mid x^{i})}(\log p_{\theta}(x^{(i)}\mid
+  z))$ relatively easily.
+
+  \vspace{2mm}
+
+  We will relate
+  $E_{q_{\phi}(z\mid x^{i})}(\log p_{\theta}(x^{(i)}\mid
+  z))$ and $p_{\theta}(x^{(i)})$.
+  
+\end{frame}
+
+\begin{frame}
+  We compute the Kullback-Leibler divergence between
+  $p_{\theta}(z\mid x^{(i)})$ and $q_\phi(z|x^{(i)})$:
+
+  \vspace{1mm}
+  
+  \[
+    D_{KL}(q_\phi(z| x^{(i)}) \| p_\theta(z| x^{(i)})) =
+    E_{q_{\phi}(z|x^{(i)})}(\log q_\phi(z|x^{(i)})-\log
+    p_{\theta}(z| x^{(i)}))=
+  \]
+  
+  \vspace{1mm}
+  
+  Applying Bayes rule to $p_\theta(z\mid x^{(i)})$:
+
+  \vspace{1mm}
+  
+  \[
+    = E_{q_{\phi}(z|x^{(i)})}(\log q_\phi(z| x^{(i)})-\log
+    p_{\theta}(x^{(i)}| z)-\log p(z))+ \log
+    p_{\theta}(x^{(i)})
+  \]
+
+  \vspace{2mm}
+  
+  After rearranging:
+  \[
+    \log p_{\theta}(x^{(i)})- D_{KL}(q_\phi(z| x^{(i)}) \|
+    p_\theta(z| x^{(i)})) =
+  \]
+  \[
+    = E_{q_{\phi}(z| x^{(i)})}\big(\log p_{\theta}(x^{(i)}|
+    z)+ \log p(z) - \log q_\phi(z| x^{(i)})\big)=
+  \]
+\end{frame}
+
+ 
+\begin{frame}
+  \frametitle{Variational lower bound}
+
+   \[
+    = E_{q_{\phi}(z| x^{(i)})}\log p_{\theta}(x^{(i)}| z) -
+    D_{KL}(q_{\phi}(z| x^{(i)})\| p(z)).
+  \]
+
+  We call the right hand side the variational lower bound:
+
+  \[
+    \mathcal{L}(\theta, \phi, x^{(i)})= E_{q_{\phi}(z|
+      x^{(i)})}\log p_{\theta}(x^{(i)}| z) -
+    D_{KL}(q_{\phi}(z| x^{(i)})\| p(z)).
+  \]
+
+  This is indeed a lower bound for $\log p_{\theta}(x^{(i)})$,
+  because the KL-divergence is always nonnegative.
+
+  \vspace{2mm}
+  
+  We want to maximize $\log p_{\theta}(x^{(i)})$, so we need to
+  optimize the lower bound with respect to both parameters,
+  $\theta$ and $\phi$.
+
+  \vspace{2mm}
+
+  We want to perform stochastic gradient descent on the
+  right hand side. 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Latent space}
+
+  \begin{figure}
+   \includegraphics[scale=0.29]{Latent.png}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  The usual choice for $q_{\phi}(z| x^{(i)})$ is
+  $\mathcal{N}(z\mid \mu_\phi(x^{(i)}),
+  \Sigma_\phi(x^{(i)})$, where $\mu_\phi$ and $\Sigma_\phi$
+  are arbitrary, deterministic functions that can be learned
+  from data.
+ 
+  \vspace{2mm}
+
+  Now the KL-divergence on the right hand side is between
+  two multivariate Gaussian distributions, which can be
+  computed in closed form:
+
+  \vspace{1mm}
+  
+  \[
+    D_{KL}(\mathcal{N}(\mu_0, \Sigma_0)\| \mathcal{N}(\mu_1,
+    \Sigma_1)) =
+  \]
+  \[
+    = \frac{1}{2}\Big(\tr (\Sigma_1^{-1}\Sigma_0)+
+    (\mu_1-\mu_0)^T \Sigma_1^{-1}(\mu_1-\mu_0)-k +\log
+    \Big(\frac{\det \Sigma_1}{\det \Sigma_0}\Big)\Big),
+  \]
+  where $k$ is the dimensionality of the distribution.
+\end{frame}
+  
+\begin{frame}
+  In our case:
+  \[
+    D_{KL}(\mathcal{N}(\mu(x^{(i)}), \Sigma(x^{(i)}))\|
+    \mathcal{N}(0,I)) =
+  \]
+  \[
+    = \frac{1}{2}\Big(\tr (\Sigma(x^{(i)}))+ (\mu(x^{(i)})^T
+    (\mu(x^{(i)})-k +\log
+    \det(\Sigma(x^{(i)}))
+  \]
+
+  We could use sampling to estimate the other term on the
+  right hand side, but instead as is standard in stochastic
+  gradient descent we take one sample of $z$ and treat
+  $p_\theta(x^{(i)}\mid z)$ for that $z$ as an approximation
+  of
+  $E_{q_{\phi}(z\mid x^{(i)})}\log p_{\theta}(x^{(i)}\mid
+  z)$.
+
+  \vspace{1mm}
+
+  So we compute the gradient of
+  \[
+    \log p_{\theta}(x^{(i)}\mid z)- D_{KL}(q_{\phi}(z\mid
+    x^{(i)})\| p(z)),
+  \]
+  and average it over arbitrarily many samples of $z$. 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Reparametrization trick}
+
+  The problem with he last equation is that
+  $E_{q_{\phi}(z\mid x^{(i)})}\log p_{\theta}(x^{(i)}\mid
+  z)$ depends on the parameters $\phi$ also, but here the
+  dependency has disappeared.
+
+  \vspace{2mm}
+
+  We need to backpropagate the error through a layer that
+  samples $z$ from $q_{\phi}(z\mid x)$, which is a
+  non-continuous operation and has no gradient.
+
+  \vspace{2mm}
+
+  Solution: we move the sampling to an input layer.
+
+  \vspace{2mm}
+
+  Given $\mu(x^{(i)})$ and $\Sigma(x^{(i)})$, tha mean and
+  covariance of $q_{\phi}(z\mid x^{(i)})$, we can sample
+  from $\mathcal{N}(\mu(x^{(i)}), \Sigma(x^{(i)}))$ by first
+  sampling $\vep \sim \mathcal{N}(0,I)$, and then computing
+  $z = \mu(x^{(i)})+ \Sigma^{1/2}(x^{(i)})\cdot \vep$.
+\end{frame}
+
+\begin{frame}
+  So the equation becomes:
+
+  \[
+    E_{\vep \sim \mathcal{N}(0,I)}\Big(\log
+    p_{\theta}(x^{(i)}\mid z = \mu(x^{(i)})+
+    \Sigma^{1/2}(x^{(i)})\cdot \vep)-
+  \]
+  \[
+    - D_{KL}(q_{\phi}(z\mid
+    x^{(i)})\| p_{\theta}(z))\Big)
+  \]
+
+  
+  \begin{figure}
+   \includegraphics[scale=0.4]{ReparamTrick.png}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Testing}
+
+  \begin{figure}
+   \includegraphics[scale=0.25]{Output_mnist.png}
+  \end{figure}
+\end{frame}
+
+\end{document}
+
+
+ \vspace{1mm}
+
+  In practice $\mu$ and $\Sigma$ are implemented via neural
+  networks, and $\Sigma$ is constrained to be a diagonal
+  matrix.
+
+
+  
+\begin{frame}
+  \begin{itemize}
+    \item Sensitive to the inputs enough to accurately build a
+    reconstruction
+    \item Insensitive enough to the inputs that the model
+      doesn't simply memorize the data
+  \end{itemize}
+
+  \begin{figure}
+   \includegraphics[scale=0.2]{autoencoder2.png}
+  \end{figure}
+\end{frame}
+
+\begin{frame} 
+  \frametitle{Autoencoder}
+
+  The bottleneck is the key attribute, without it the
+  network could easily memorize the input values.
+  
+  \begin{figure}
+    \includegraphics[scale=0.25]{autoencoder.png}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Undercomplete autoencoder}
+
+  We only constrain the number of nodes in the hidden
+  layers. 
+
+  \begin{figure}
+   \includegraphics[scale=0.3]{UndercompleteAE.png}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Autoencoders}
+
+  They are not good for data compression, it is very
+  difficult to train an autoencoder that does a better job
+  than a basic algorithm like JPEG. The fact that
+  autoencoders are data-specific makes them generally
+  impractical for real-world data compression problems.
+
+  \vspace{3mm}
+
+  Today two interesting practical applications of
+  autoencoders are data denoising and dimensionality
+  reduction for data visualization.
+
+  \vspace{3mm}
+
+  The fundamental problem with autoencoders, for generation,
+  is that the latent space they convert their inputs to and
+  where their encoded vectors lie, may not be continuous, or
+  allow easy interpolation.
+\end{frame}
+
+

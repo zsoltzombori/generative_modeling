@@ -525,7 +525,7 @@ class Dataset_circles_peri(Dataset_syn_infinite):
             "syn-circles-peri", shape=shape)
 
     def generate_one_sample(self, data, v): 
-        v = v / 2 + 1
+        v = (v+1) /2
         v *= np.array(self.shape)
         radius = 5
         for y in range(data.shape[0]):
