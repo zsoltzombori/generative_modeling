@@ -7,7 +7,7 @@ import data
 
 import autoencoder
 import gan
-
+import trash_01
 # load parameters
 args = params.getArgs()
 print("\n\n")
@@ -34,6 +34,8 @@ if args.model_type == "autoencoder":
     autoencoder.run(args, (x_train, x_test))
 elif args.model_type in ("gan", "wgan","wgan-gp"):
     gan.run(args, (x_train, x_test))
+elif args.model_type== "trash":
+    trash_01.start(args,(x_train,x_test))
 else:
     assert False, "Unrecognized model_type: {}".format(args.model_type)
 

@@ -75,17 +75,30 @@ class iWGAN_01:
             self.input_shape=args.input_shape
         else:
             self.input_shape=(28,28,1)
+        
         if('generator_activation' not in args):
             self.gen_act="tanh"
         else:
             self.gen_act=args.generation_activation
+        
         self.talky=True
+        
+        if("dropout" in args):
+            self.dropout=(args.dropout=="True")
+        else:
+            self.dropout=False
+        print(self.dropout,"WWWWWWWWWWWWWWWW")
         
     def build_generator(self,batch_norm=False):
         model = Sequential()
+        if(self.input_shape[0]==28):
+            start_dim=self.input_shape[0]//4
+        else:
+            start_dim=self.input_shape[0]//4
+        s=start_dim
 
-        model.add(Dense(128 * 7 * 7, activation="relu", input_dim=self.latent_dim))
-        model.add(Reshape((7, 7, 128)))
+        model.add(Dense(128 * s * s, activation="relu", input_dim=self.latent_dim))
+        model.add(Reshape((s, s, 128)))
         model.add(UpSampling2D())
         model.add(Conv2D(128, kernel_size=4, padding="same"))
         if(batch_norm):
@@ -113,25 +126,29 @@ class iWGAN_01:
         
         model.add(Conv2D(16, kernel_size=3, strides=2, input_shape=self.input_shape, padding="same"))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
+        if(self.dropout):
+            model.add(Dropout(0.25))
         model.add(Conv2D(32, kernel_size=3, strides=2, padding="same"))
         model.add(ZeroPadding2D(padding=((0,1),(0,1))))
         if(batch_norm):
             model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
+        if(self.dropout):
+            model.add(Dropout(0.25))
         model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
         if(batch_norm):
             model.add(BatchNormalization(momentum=0.8))
             
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
+        if(self.dropout):
+            model.add(Dropout(0.25))
         model.add(Conv2D(128, kernel_size=3, strides=1, padding="same"))
         if(batch_norm):
             model.add(BatchNormalization(momentum=0.8))
             
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
+        if(self.dropout):
+            model.add(Dropout(0.25))
         model.add(Flatten())
         model.add(Dense(1))
 

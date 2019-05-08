@@ -15,18 +15,29 @@ import util
 
 import networks.models
 from networks import dense, conv
-
+import data as datasets
 
 def run(args, data):
-    (x_train, x_test) = data
+    if("mydataset" in args and args.mydataset == "syn-circles"):
+        dataset = datasets.load("syn-circles", (64,64))
+        x_train, x_test = dataset.get_data(args.trainSize, args.testSize)
+        print(np.shape(x_train))
+    else:
+        (x_train, x_test) = data
 
+    x_train = (x_train * 2) - 1
+    x_test = (x_test * 2) -1
+    if("save_train_test" in args and args.save_train_test):
+        np.save("{}/test.npy".format(args.outdir), x_test)
+        np.save("{}/train.npy".format(args.outdir),x_train)
+        exit()
     # vanilla gan works better if images are scaled to [-1,1]
     # if you change this, make sure that the output of the generator is not a tanh
     x_train = (x_train * 2) - 1
     dim=int(np.sqrt(np.product(args.shape)))
     print(np.shape(x_train))
     if(args.model_type=="wgan-gp" or args.model_type=="wgan"):
-        x_train=x_train.reshape(len(x_train),dim,dim,1)
+        x_train=x_train.reshape(len(x_train),dim,dim,3 if args.color else 1)
     
     args['input_shape']=np.shape(x_train)[1:]
     
@@ -153,7 +164,9 @@ def run(args, data):
         if (step+1) % args.frequency == 0:
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (step+1, d_loss[0], 100*d_loss[1], g_loss))
             vis.displayRandom((10, 10), args, models, sampler, "{}/random-{}".format(args.outdir, step+1))
-
+            args.modelID="_"+str(step+1)
+            model_IO.save_gan(models,args)
+            args.modelID=""
 
     # save models
     model_IO.save_gan(models, args)
@@ -169,7 +182,7 @@ def build_models(args):
     if args.discriminator == "dense":
         discriminator = dense.build_model(args.original_shape, [1], args.discriminator_dims, args.discriminator_wd, args.discriminator_use_bn, args.activation, "sigmoid")
     elif args.discriminator == "conv":
-        discriminator = conv.build_model(args.original_shape, [1], args.discriminator_conv_channels, args.discriminator_wd, args.discriminator_use_bn, args.activation, "sigmoid")
+        discriminator = conv.build_model(args.original_shape, [3 if args.color else 1], args.discriminator_conv_channels, args.discriminator_wd, args.discriminator_use_bn, args.activation, "sigmoid")
     elif (args.discriminator== "wgan_disc"):
         print("===============wgan disc=============="); 
         discriminator=wgan_model.build_discriminator(args.discriminator_use_bn);
@@ -179,7 +192,9 @@ def build_models(args):
     generator_input_shape = (args.latent_dim, )
     if args.generator == "dense":
         generator = dense.build_model(generator_input_shape, args.original_shape, args.generator_dims, args.generator_wd, args.generator_use_bn, args.activation, "tanh")
-    elif (args.generator== "wgan_gen"):
+    elif(args.generator == "conv"):
+        generator = conv.build_model(args.original_shape, [3 if args.color else 1], args.discriminator_conv_channels, args.discriminator_wd, args.discriminator_use_bn, args.activation, "tanh")
+    elif (args.generator == "wgan_gen"):
         print("===============wgan gen=============="); 
         generator=wgan_model.build_generator(args.generator_use_bn);
     else:

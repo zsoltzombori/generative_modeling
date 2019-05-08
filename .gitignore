@@ -1,2 +1,3 @@
 datasets
 pictures/*
+*__pycache__*

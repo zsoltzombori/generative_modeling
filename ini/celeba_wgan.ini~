@@ -1,11 +1,10 @@
 activation  leakyrelu
 batch_size  64
-color   False
-dataset mnist
+color   True
+dataset celeba
 discriminator   wgan_disc
 discriminator_use_bn	False
 frequency   1000
-save_train_test False
 gan_generator_update    1
 gan_discriminator_update    5
 generator   wgan_gen
@@ -20,8 +19,8 @@ rho 0.9
 metrics accuracy
 model_type  wgan
 optimizer   rmsprop
-outdir  pictures/wgan
-shape   28,28
+outdir  pictures/celeba_wgan
+shape   64,64
 testSize    10000
 trainSize   50000
 training_steps  30000
