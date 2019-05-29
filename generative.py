@@ -7,7 +7,7 @@ import data
 
 import autoencoder
 import gan
-import trash_01
+
 # load parameters
 args = params.getArgs()
 print("\n\n")

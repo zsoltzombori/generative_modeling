@@ -41,7 +41,7 @@ def save_autoencoder(modelDict, args):
     outdir = args.outdir
     saveModel(modelDict.ae, (outdir + "/ae"))
     saveModel(modelDict.encoder, (outdir + "/encoder"))
-    saveModel(modelDict.generator, (outdir + "/generator"))
+    saveModel(modelDict.generator, (outdir + "/generator"+args.modelID))
 def save_gan(modelDict, args):
     outdir = args.outdir
     saveModel(modelDict.discriminator, (outdir + "/discriminator"+args.modelID))
