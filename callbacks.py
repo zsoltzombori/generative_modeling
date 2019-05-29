@@ -6,7 +6,7 @@ from keras.callbacks import LearningRateScheduler, Callback
 from keras import backend as K
 from keras.models import Model
 import numpy as np
-
+import model_IO
 import vis
 
 class ImageDisplayCallback(Callback):
@@ -37,7 +37,11 @@ class ImageDisplayCallback(Callback):
         testBatch = self.x_test[:self.args.batch_size]
         vis.displayReconstructed(testBatch, self.args, self.modelDict, "{}/test-{}".format(self.args.outdir, epoch))
         vis.displayReconstructed(testBatch, self.args, self.modelDict, "{}/test".format(self.args.outdir))
- 
+
+        # ===== SAVE model: =====
+        self.args.modelID="_"+str(epoch)
+        model_IO.save_autoencoder(self.modelDict, self.args)
+        self.args.modelID=""
 
 # def get_lr_scheduler(nb_epoch, base_lr, lr_decay_schedule):
 #     assert lr_decay_schedule == sorted(lr_decay_schedule), "lr_decay_schedule has to be monotonically increasing!"

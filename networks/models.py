@@ -9,46 +9,8 @@ from keras import objectives
 from keras.layers.advanced_activations import LeakyReLU
 from keras import layers
 import networks.net_blocks
-from keras.utils.vis_utils import plot_model
+#from keras.utils.vis_utils import plot_model
 
-
-class Improved_WGAN_paper_MNIST:
-    def build_generator(latent_dim,batch_norm=False,imp_dim=784):
-        DIM=64
-        model = Sequential()
-        
-        model.add(Dense(4*4*4*DIM,input_dim=latent_dim))
-        
-        # Reshape for Convolutional:
-        if K.image_data_format() == 'channels_first':
-            model.add(Reshape((4*DIM, 4, 4), input_shape=(4*4*4*DIM,)))
-            bn_axis = 1
-        else:
-            model.add(Reshape((4, 4, 4*DIM), input_shape=(4*4*4*DIM,)))
-            bn_axis = -1
-        
-        # First Convolutional:
-        model.add(Conv2DTranspose(2*DIM, (5, 5), strides=2))
-        if(batch_norm):
-            model.add(BatchNormalization())
-        model.add(Activation('relu'))
-        
-        ## Reshape???
-        
-        # Second Convolutional:
-        model.add(Conv2DTranspose(DIM, (5, 5), strides=2))
-        if(batch_norm):
-            model.add(BatchNormalization())
-        model.add(Activation('relu'))
-        
-        # Third Convolutional:
-        model.add(Conv2DTranspose(1, (5, 5), strides=2))
-        if(batch_norm):
-            model.add(BatchNormalization())
-        model.add(Activation('sigmoid'))
-        
-        #model.add(Reshape((-1,28,28,1)))
-        
 
 class Dense_model:
     def build_model(input_shape, output_shape, dims, wd, use_bn, activation, last_activation):
@@ -98,7 +60,7 @@ class iWGAN_01:
         
     def build_generator(self,batch_norm=False):
         model = Sequential()
-        s=self.input_shape[0]//8
+        s=self.input_shape[0]//4
         #shape = (self.input_shape[0], self.input_shape[1], self.color)
         color = self.color
 
@@ -120,10 +82,11 @@ class iWGAN_01:
         model.add(BatchNormalization(momentum=0.8))
         model.add(Activation("relu"))
 
-        model.add(UpSampling2D())
+        #model.add(UpSampling2D())
         model.add(Conv2D(color, kernel_size=4, padding="same"))
         model.add(Activation("tanh"))
 
+        model.summary()
         model.add(Reshape(self.input_shape))
         
         if(self.talky):
@@ -132,13 +95,13 @@ class iWGAN_01:
         noise = Input(shape=(self.latent_dim,))
         img = model(noise)
 
-        plot_model(model, to_file='generator.png', show_shapes=True, show_layer_names=True)
+        #plot_model(model, to_file='generator.png', show_shapes=True, show_layer_names=True)
         return Model(noise, img)
         
     def build_discriminator(self,batch_norm=False):
         model = Sequential()
         dim = np.prod(self.input_shape[:])
-        s=self.input_shape[0]//8
+        s=self.input_shape[0]//4
         
         print('dim', dim)
         model.add(Reshape((-1, int(dim)), input_shape=self.input_shape))
@@ -150,15 +113,15 @@ class iWGAN_01:
         model.add(Dropout(0.25))
         model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
         model.add(ZeroPadding2D(padding=((0,1),(0,1))))
-        model.add(BatchNormalization(momentum=0.8))
+        #model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
         model.add(Conv2D(64, kernel_size=3, strides=2, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
+        #model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
-        model.add(Conv2D(128, kernel_size=3, strides=2, padding="same"))
-        model.add(BatchNormalization(momentum=0.8))
+        model.add(Conv2D(128, kernel_size=3, strides=1, padding="same"))
+        #model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
         model.add(Flatten())
@@ -167,7 +130,7 @@ class iWGAN_01:
         if(self.talky):
             model.summary()
 
-        plot_model(model, to_file='generator.png', show_shapes=True, show_layer_names=True)
+        #plot_model(model, to_file='generator.png', show_shapes=True, show_layer_names=True)
 
         img = Input(shape=self.input_shape)
         validity = model(img)
