@@ -25,7 +25,7 @@ if keras.backend._BACKEND == "tensorflow":
 
 # load data
 data_object = data.load(args.dataset, shape=args.shape, color=args.color)
-(x_train, x_test) = data_object.get_data(args.trainSize, args.testSize)
+((x_train, y_train), (x_test, y_test)) = data_object.get_data(args.trainSize, args.testSize)
 args.original_shape = x_train.shape[1:]
 args.original_size = np.prod(args.original_shape)
 
